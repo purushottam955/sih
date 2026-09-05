@@ -367,7 +367,7 @@ function renderProfile(container) {
     container.innerHTML = `
         <div class="page">
             <div class="page-header"><h2><i class="fas fa-user-circle"></i> My Profile</h2></div>
-            <div class="card" style="max-width:700px;">
+            <div class="card" style="width:100%; max-width:none;">
                 <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
                     <div style="width:80px;height:80px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#fff;">${user.initials}</div>
                     <div>
