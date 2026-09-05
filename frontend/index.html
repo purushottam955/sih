@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skill Intelligence Platform — MoSPI</title>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- ============================================================
+    LOGIN SCREEN
+    ============================================================ -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-brand">
+                <div class="login-brand-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h1>Skill Intelligence</h1>
+                <span class="login-badge">Capacity Building Initiative</span>
+            </div>
+
+            <div class="login-card">
+                <h2>Welcome back</h2>
+                <p class="login-subtitle">AI-Enabled Capacity Building for Government Officials</p>
+
+                <form id="loginForm" autocomplete="off">
+                    <div class="form-group">
+                        <label for="employeeIdInput"><i class="fas fa-id-badge"></i> Employee ID</label>
+                        <input type="text" id="employeeIdInput" value="MOSPI-2024-0142" placeholder="Enter Employee ID" />
+                    </div>
+                    <div class="form-group">
+                        <label for="passwordInput"><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="passwordInput" value="password" placeholder="Enter Password" />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                </form>
+
+                <div class="login-divider">
+                    <span>OR</span>
+                </div>
+
+                <button id="demoLoginBtn" class="btn btn-outline btn-block">
+                    <i class="fas fa-user-circle"></i> Demo Login as Ananya Sharma
+                </button>
+
+                <div class="login-footer">
+                    <p>Prototype for SIH 2026 — PS 101</p>
+                    <span>This is a demonstration interface. No real authentication is performed.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN APPLICATION
+    ============================================================ -->
+    <div id="appContainer" class="app-container" style="display:none;">
+
+        <!-- TOP NAVBAR -->
+        <header class="navbar">
+            <div class="navbar-left">
+                <button id="sidebarToggle" class="nav-toggle-btn" aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="navbar-brand">
+                    <span class="brand-icon"><i class="fas fa-brain"></i></span>
+                    <div>
+                        <span class="brand-name">Skill Intelligence</span>
+                        <span class="brand-badge">MoSPI / NSSTA</span>
+                    </div>
+                </div>
+                <span class="brand-subtitle">iGOT Karmayogi Competency Engine</span>
+            </div>
+            <div class="navbar-right">
+                <button id="roleSwitchBtn" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-exchange-alt"></i> Switch Role <span id="roleLabel">(Learner)</span>
+                </button>
+                <button id="notifBtn" class="nav-icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-dot"></span>
+                </button>
+                <div class="user-menu">
+                    <span class="user-avatar" id="userAvatar">AS</span>
+                    <div class="user-info">
+                        <span class="user-name" id="userNameDisplay">Ananya Sharma</span>
+                        <span class="user-role" id="userRoleDisplay">Statistical Officer</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-sm btn-outline-light logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- NOTIFICATION PANEL -->
+        <div id="notifPanel" class="notification-panel" style="display:none;">
+            <div class="notif-header">
+                <h4><i class="fas fa-bell"></i> Notifications</h4>
+                <button id="notifCloseBtn" class="close-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <ul class="notif-list" id="notifList">
+                <!-- populated by JS -->
+            </ul>
+        </div>
+
+        <!-- SIDEBAR + MAIN CONTENT -->
+        <div class="layout">
+            <!-- SIDEBAR -->
+            <nav id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <span class="sidebar-brand"><i class="fas fa-brain"></i> Skill Intel</span>
+                    <span class="sidebar-version">v1.0</span>
+                </div>
+                <ul class="sidebar-nav" id="sidebarNav">
+                    <!-- populated by JS based on role -->
+                </ul>
+                <div class="sidebar-footer">
+                    <span class="sidebar-user" id="sidebarUser">AS · Ananya Sharma</span>
+                </div>
+            </nav>
+
+            <!-- MAIN CONTENT -->
+            <main class="main-content" id="mainContent">
+                <!-- pages are rendered here by JS -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    EXPLAINABILITY MODAL
+    ============================================================ -->
+    <div id="explainModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-lightbulb"></i> Competency Explainability Trail</h3>
+                <button class="close-btn modal-close" data-modal="explainModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="explainBody">
+                <!-- populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <span class="audit-badge"><i class="fas fa-check-circle"></i> Auditable · Deterministic Rules Engine</span>
+                <button class="btn btn-secondary modal-close" data-modal="explainModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    COURSE DETAIL MODAL
+    ============================================================ -->
+    <div id="courseModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-graduation-cap"></i> Course Details</h3>
+                <button class="close-btn modal-close" data-modal="courseModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="courseModalBody">
+                <!-- populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close" data-modal="courseModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    ASSESSMENT RESULT MODAL
+    ============================================================ -->
+    <div id="assessmentResultModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-clipboard-check"></i> Assessment Result</h3>
+                <button class="close-btn modal-close" data-modal="assessmentResultModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="assessmentResultBody">
+                <!-- populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close" data-modal="assessmentResultModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    SCRIPTS
+    ============================================================ -->
+    <script src="script.js"></script>
+</body>
+</html>
