@@ -21,18 +21,19 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  targetRole      Role?         @relation("TargetRole", fields: [targetRoleId], references: [id])
+  targetRole      Role?            @relation("TargetRole", fields: [targetRoleId], references: [id])
   userCompetencies UserCompetency[]
   enrollments     Enrollment[]
   assessments     AssessmentResult[]
   notifications   Notification[]
+  assessmentAnswers AssessmentAnswer[] // ADDED: opposite for AssessmentAnswer.user
 
   @@map("users")
 }
 
 model Role {
   id          String   @id @default(cuid())
-  name        String   @unique // e.g., "Statistical Officer"
+  name        String   @unique
   description String?
   createdAt   DateTime @default(now())
 
@@ -44,20 +45,22 @@ model Role {
 
 model Competency {
   id          String   @id @default(cuid())
-  name        String   @unique // e.g., "Data Analysis"
+  name        String   @unique
   description String?
   createdAt   DateTime @default(now())
 
   roleCompetencies RoleCompetency[]
   userCompetencies UserCompetency[]
   courses           Course[]
+  assessmentQuestions AssessmentQuestion[] // ADDED: opposite for AssessmentQuestion.competency
+  assessmentResults   AssessmentResult[]   // ADDED: opposite for AssessmentResult.competency
 }
 
 model RoleCompetency {
   id            String   @id @default(cuid())
   roleId        String
   competencyId  String
-  requiredLevel Int      // 1-7
+  requiredLevel Int
   createdAt     DateTime @default(now())
 
   role        Role       @relation(fields: [roleId], references: [id])
@@ -71,7 +74,7 @@ model UserCompetency {
   id            String   @id @default(cuid())
   userId        String
   competencyId  String
-  level         Int      // assessed level 1-7
+  level         Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -86,7 +89,7 @@ model Course {
   id          String   @id @default(cuid())
   title       String
   description String
-  competencyId String  // the competency this course targets
+  competencyId String
   createdAt   DateTime @default(now())
 
   competency  Competency @relation(fields: [competencyId], references: [id])
@@ -97,7 +100,7 @@ model Enrollment {
   id        String   @id @default(cuid())
   userId    String
   courseId  String
-  status    String   @default("ENROLLED") // ENROLLED, COMPLETED
+  status    String   @default("ENROLLED")
   enrolledAt DateTime @default(now())
   completedAt DateTime?
 
@@ -111,8 +114,8 @@ model AssessmentQuestion {
   id          String   @id @default(cuid())
   competencyId String
   question    String
-  options     String[] // array of options stored as JSON
-  correctIndex Int     // index of correct answer (0-based)
+  options     String[]
+  correctIndex Int
   createdAt   DateTime @default(now())
 
   competency  Competency @relation(fields: [competencyId], references: [id])
@@ -135,8 +138,8 @@ model AssessmentResult {
   id          String   @id @default(cuid())
   userId      String
   competencyId String
-  score       Int      // number of correct answers
-  total       Int      // total questions
+  score       Int
+  total       Int
   passed      Boolean
   takenAt     DateTime @default(now())
 
@@ -148,7 +151,7 @@ model Notification {
   id        String   @id @default(cuid())
   userId    String
   message   String
-  icon      String?  // FontAwesome icon class
+  icon      String?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -159,7 +162,7 @@ model CareerPath {
   id        String   @id @default(cuid())
   fromRoleId String
   toRoleId   String
-  step       Int      // order
+  step       Int
   description String?
   createdAt  DateTime @default(now())
 
