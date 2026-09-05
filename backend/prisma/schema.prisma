@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  employeeId      String   @unique
+  email           String   @unique
+  passwordHash    String
+  name            String
+  designation     String
+  department      String
+  qualification   String
+  targetRoleId    String?  @map("targetRoleId")
+  role            String   @default("LEARNER") // LEARNER or ADMIN
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  targetRole      Role?         @relation("TargetRole", fields: [targetRoleId], references: [id])
+  userCompetencies UserCompetency[]
+  enrollments     Enrollment[]
+  assessments     AssessmentResult[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "Statistical Officer"
+  description String?
+  createdAt   DateTime @default(now())
+
+  targetUsers   User[]            @relation("TargetRole")
+  roleCompetencies RoleCompetency[]
+  careerPathsFrom CareerPath[]    @relation("FromRole")
+  careerPathsTo   CareerPath[]    @relation("ToRole")
+}
+
+model Competency {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "Data Analysis"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roleCompetencies RoleCompetency[]
+  userCompetencies UserCompetency[]
+  courses           Course[]
+}
+
+model RoleCompetency {
+  id            String   @id @default(cuid())
+  roleId        String
+  competencyId  String
+  requiredLevel Int      // 1-7
+  createdAt     DateTime @default(now())
+
+  role        Role       @relation(fields: [roleId], references: [id])
+  competency  Competency @relation(fields: [competencyId], references: [id])
+
+  @@unique([roleId, competencyId])
+  @@map("role_competencies")
+}
+
+model UserCompetency {
+  id            String   @id @default(cuid())
+  userId        String
+  competencyId  String
+  level         Int      // assessed level 1-7
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id])
+  competency  Competency @relation(fields: [competencyId], references: [id])
+
+  @@unique([userId, competencyId])
+  @@map("user_competencies")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  competencyId String  // the competency this course targets
+  createdAt   DateTime @default(now())
+
+  competency  Competency @relation(fields: [competencyId], references: [id])
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  status    String   @default("ENROLLED") // ENROLLED, COMPLETED
+  enrolledAt DateTime @default(now())
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model AssessmentQuestion {
+  id          String   @id @default(cuid())
+  competencyId String
+  question    String
+  options     String[] // array of options stored as JSON
+  correctIndex Int     // index of correct answer (0-based)
+  createdAt   DateTime @default(now())
+
+  competency  Competency @relation(fields: [competencyId], references: [id])
+  results     AssessmentAnswer[]
+}
+
+model AssessmentAnswer {
+  id          String   @id @default(cuid())
+  userId      String
+  questionId  String
+  selectedIndex Int
+  isCorrect   Boolean
+  createdAt   DateTime @default(now())
+
+  user     User               @relation(fields: [userId], references: [id])
+  question AssessmentQuestion @relation(fields: [questionId], references: [id])
+}
+
+model AssessmentResult {
+  id          String   @id @default(cuid())
+  userId      String
+  competencyId String
+  score       Int      // number of correct answers
+  total       Int      // total questions
+  passed      Boolean
+  takenAt     DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  competency Competency @relation(fields: [competencyId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  icon      String?  // FontAwesome icon class
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model CareerPath {
+  id        String   @id @default(cuid())
+  fromRoleId String
+  toRoleId   String
+  step       Int      // order
+  description String?
+  createdAt  DateTime @default(now())
+
+  fromRole Role @relation("FromRole", fields: [fromRoleId], references: [id])
+  toRole   Role @relation("ToRole", fields: [toRoleId], references: [id])
+
+  @@unique([fromRoleId, toRoleId, step])
+}
