@@ -179,7 +179,7 @@ async function renderDashboard(container) {
         }
     });
 
-    const progress = Math.max(0, 100 - (totalGaps / COMPETENCIES.length) * 100);
+    const progress = Math.round(COMPETENCIES.reduce((sum, comp) => { const item = gapData.gaps[comp]; return sum + (item ? Math.min(item.current / Math.max(item.required, 1), 1) * 100 : 0); }, 0) / COMPETENCIES.length);
 
     container.innerHTML = `
         <div class="page">
@@ -423,6 +423,20 @@ async function renderCareer(container) {
     });
 }
 
+function formatAIResponse(text) {
+    let html = String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^###\s+(.+)$/gm, '<h4 class="ai-heading">$1</h4>')
+        .replace(/^##\s+(.+)$/gm, '<h3 class="ai-heading">$1</h3>')
+        .replace(/^(\d+)\.\s+(.+)$/gm, '<div class="ai-numbered"><strong>$1.</strong> $2</div>')
+        .replace(/^[-•]\s+(.+)$/gm, '<div class="ai-bullet">• $1</div>')
+        .replace(/\n{2,}/g, '<div class="ai-space"></div>')
+        .replace(/\n/g, '<br>');
+    return html;
+}
 // ----- AI CHAT ASSISTANT -----
 function renderAssistant(container) {
     container.innerHTML = `
@@ -435,7 +449,7 @@ function renderAssistant(container) {
                     ${state.chatHistory.map(msg => `
                         <div class="chat-msg ${msg.role}">
                             <div class="msg-label">${msg.role === 'user' ? 'You' : 'Gemini Assistant'}</div>
-                            ${msg.text}
+                            ${formatAIResponse(msg.text)}
                         </div>
                     `).join('')}
                     ${state.chatHistory.length === 0 ? `<div class="chat-msg assistant"><div class="msg-label">Assistant</div>Greetings ${state.user.name}. I am grounded in your competency framework and training documents. How may I assist your professional development today?</div>` : ''}
@@ -483,7 +497,7 @@ async function sendChatMessage() {
     container.scrollTop = container.scrollHeight;
 
     try {
-        const responseData = await fetchAPI('/ai/chat/', {
+        const responseData = await fetchAPI('/ai/chat', {
             method: 'POST',
             body: JSON.stringify({
                 message: msg,
@@ -838,3 +852,5 @@ window.viewCourse = viewCourse;
 window.showExplainability = showExplainability;
 window.navigateTo = navigateTo;
 window.resetAssessment = resetAssessment;
+
+
