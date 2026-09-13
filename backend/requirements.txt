@@ -4,9 +4,11 @@ sqlalchemy==2.0.28
 pydantic==2.6.3
 pydantic-settings==2.2.1
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4`nbcrypt==4.0.1
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 python-multipart==0.0.9
 pymupdf>=1.26
 python-docx==1.1.0
 google-generativeai==0.4.1
+
 
