@@ -470,13 +470,66 @@ def submit_assessment(
         assessment.questions
     )
 
+    # --------------------------------------------------------
+    # UPDATE USER COMPETENCY FROM ASSESSMENT PERFORMANCE
+    # --------------------------------------------------------
+
+    total_questions = max(assessment.total, 1)
+    percentage = (score / total_questions) * 100
+
+    # Convert assessment performance to competency level 1-7
+    if percentage >= 95:
+        new_level = 7
+    elif percentage >= 85:
+        new_level = 6
+    elif percentage >= 70:
+        new_level = 5
+    elif percentage >= 55:
+        new_level = 4
+    elif percentage >= 40:
+        new_level = 3
+    elif percentage >= 25:
+        new_level = 2
+    else:
+        new_level = 1
+
+    competencies = current_user.competencies or {}
+
+    detected_competencies = []
+
+    for question in assessment.questions:
+        competency = (
+            question.get("competency")
+            or question.get("skill")
+            or question.get("category")
+        )
+
+        if competency and competency in competencies:
+            detected_competencies.append(competency)
+
+    # Fallback: if questions do not specify a competency,
+    # use the first competency in the employee profile.
+    if not detected_competencies and competencies:
+        detected_competencies = [next(iter(competencies))]
+
+    for competency in set(detected_competencies):
+        old_level = competencies.get(competency, 0)
+        competencies[competency] = max(
+            old_level,
+            new_level
+        )
+
+    current_user.competencies = competencies
+
     db.commit()
 
     return {
         "score": score,
         "total": assessment.total,
+        "percentage": round(percentage, 1),
+        "competency_level": new_level,
+        "updated_competencies": competencies,
     }
-
 
 # ============================================================
 # AI CHAT + RAG
@@ -489,92 +542,120 @@ def ai_chat(
     current_user: User = Depends(get_current_user),
 ):
     # --------------------------------------------------------
-    # No API key
+    # Local fallback
     # --------------------------------------------------------
+    def local_fallback():
+        competencies = current_user.competencies or {}
 
-    if not settings.GEMINI_API_KEY:
-
-        return {
-            "response": (
-                "Gemini API key is not configured. "
-                "Please review your high-priority "
-                "competency gaps first."
+        if not competencies:
+            return (
+                "I am currently operating in offline mode because "
+                "the Gemini AI service is unavailable. "
+                "Please complete an assessment to generate your "
+                "personalized competency profile."
             )
+
+        required_levels = {
+            "Statistical": 5,
+            "Data Analysis": 5,
+            "Data Visualization": 4,
+            "Digital Governance": 4,
+            "Leadership": 4,
         }
 
+        gaps = []
+        for skill, required in required_levels.items():
+            current = competencies.get(skill, 0)
+            if current < required:
+                gaps.append((skill, required - current, current, required))
+
+        gaps.sort(key=lambda x: x[1], reverse=True)
+
+        if not gaps:
+            return (
+                "Gemini is temporarily unavailable, but your competency "
+                "profile shows that you currently meet the required "
+                "levels for the target role. Keep strengthening your "
+                "skills through continuous learning and reassessment."
+            )
+
+        lines = [
+            "Gemini is temporarily unavailable, so I am using the "
+            "platform's local competency guidance.",
+            "",
+            "Priority skill gaps:"
+        ]
+
+        for skill, gap, current, required in gaps[:3]:
+            lines.append(
+                f"? {skill}: current Level {current}, "
+                f"required Level {required} (gap {gap})"
+            )
+
+        lines.extend([
+            "",
+            "Recommended action:",
+            "1. Focus first on the largest competency gap.",
+            "2. Complete the recommended training module.",
+            "3. Take a reassessment after training.",
+            "",
+            "When Gemini becomes available again, the AI Assistant "
+            "will automatically return to Gemini-powered responses."
+        ])
+
+        return "\n".join(lines)
+
     # --------------------------------------------------------
-    # Create query embedding
-    #
-    # IMPORTANT:
-    # User question = retrieval_query
+    # Try Gemini
     # --------------------------------------------------------
+    try:
+        if not settings.GEMINI_API_KEY:
+            return {"response": local_fallback()}
 
-    query_embedding = get_embedding(
-        req.message,
-        task_type="retrieval_query",
-    )
+        query_embedding = None
 
-    # --------------------------------------------------------
-    # Find stored document chunks
-    # --------------------------------------------------------
+        # RAG is optional. If embedding fails, continue without it.
+        try:
+            query_embedding = get_embedding(
+                req.message,
+                task_type="retrieval_query",
+            )
+        except Exception as e:
+            print(f"RAG embedding unavailable: {e}")
 
-    chunks = (
-        db.query(DocumentChunk)
-        .all()
-    )
+        context_text = ""
 
-    context_text = ""
+        if query_embedding is not None:
+            chunks = db.query(DocumentChunk).all()
+            scored_chunks = []
 
-    if chunks:
-
-        scored_chunks = []
-
-        for chunk in chunks:
-
-            try:
-                similarity = cosine_similarity(
-                    query_embedding,
-                    chunk.embedding,
-                )
-
-                scored_chunks.append(
-                    (
-                        similarity,
-                        chunk.text_chunk,
+            for chunk in chunks:
+                try:
+                    similarity = cosine_similarity(
+                        query_embedding,
+                        chunk.embedding,
                     )
+                    scored_chunks.append(
+                        (similarity, chunk.text_chunk)
+                    )
+                except Exception as e:
+                    print(f"RAG similarity error: {e}")
+
+            if scored_chunks:
+                best_chunk = max(
+                    scored_chunks,
+                    key=lambda x: x[0],
                 )
 
-            except Exception as e:
-                print(
-                    f"RAG similarity error: {e}"
-                )
+                if best_chunk[0] > 0.5:
+                    context_text = best_chunk[1]
 
-        if scored_chunks:
+        from .services import model
 
-            best_chunk = max(
-                scored_chunks,
-                key=lambda x: x[0],
-            )
+        if model is None:
+            return {"response": local_fallback()}
 
-            if best_chunk[0] > 0.5:
-                context_text = best_chunk[1]
-
-    # --------------------------------------------------------
-    # Gemini response
-    # --------------------------------------------------------
-
-    from .services import model
-
-    if model is None:
-
-        return {
-            "response": (
-                "Gemini model is not available. "
-                "Please check your GEMINI_API_KEY."
-            )
-        }
-
-    prompt = f"""
+        prompt = f"""
 You are the AI Competency Assistant for the
 MoSPI / NSSTA Skill Intelligence Platform.
 
@@ -597,28 +678,16 @@ If relevant, prioritize the user's competency
 gaps and recommend learning actions.
 """
 
-    try:
-
-        response = model.generate_content(
-            prompt
-        )
+        response = model.generate_content(prompt)
 
         return {
             "response": response.text
         }
 
     except Exception as e:
-
-        print(
-            f"Gemini chat error: {e}"
-        )
-
+        print(f"Gemini chat error - using local fallback: {e}")
         return {
-            "response": (
-                "I could not generate an AI response "
-                "right now. Please check the Gemini "
-                "API configuration."
-            )
+            "response": local_fallback()
         }
 
 

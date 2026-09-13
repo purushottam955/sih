@@ -626,12 +626,8 @@ function renderAssessment(container) {
             state.assessmentSubmitted = true;
             renderAssessment(document.getElementById('mainContent'));
 
-            document.getElementById('assessmentResultBody').innerHTML = `
-                <p>Your performance report has been compiled.</p>
-                <p>Score: <strong>${result.score}</strong> / <strong>${result.total}</strong></p>
-                <p style="margin-top:0.5rem;font-size:0.85rem;color:#64748b;">Results successfully recorded in iGOT Competency Registry.</p>
-            `;
-            document.getElementById('assessmentResultModal').style.display = 'flex';
+            showAssessmentResult(result);
+            document.getElementById('assessmentResultModal').style.setProperty('display','flex','important');
         } catch (err) {
             alert('Failed to submit assessment: ' + err.message);
         }
@@ -647,6 +643,8 @@ function resetAssessment() {
     state.currentAssessmentId = null;
     renderAssessment(document.getElementById('mainContent'));
 }
+
+function showAssessmentResult(result){var pct=result.percentage??Math.round((result.score/Math.max(result.total,1))*100);var level=result.competency_level??"—";document.getElementById("assessmentResultBody").innerHTML="<p>Your performance report has been compiled successfully.</p><div class=\"assessment-result-score\"><div class=\"score-number\">"+result.score+"/"+result.total+"</div><div class=\"score-label\">"+pct+"% assessment performance</div></div><div style=\"padding:14px 16px;margin-bottom:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;\"><div style=\"font-size:13px;color:#64748b;margin-bottom:5px;\">Assessed Competency Level</div><div style=\"font-size:24px;font-weight:800;color:#2563eb;\">Level "+level+" / 7</div></div><div class=\"assessment-success\"><span>?</span><span>Assessment recorded and competency profile updated successfully.</span></div>";}
 
 // ----- ADMIN DASHBOARD -----
 async function renderAdmin(container) {
@@ -810,7 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.modal-close').forEach(btn => {
         btn.addEventListener('click', function () {
             const modal = this.closest('.modal-overlay');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.style.setProperty('display','none','important');
         });
     });
 
@@ -822,9 +820,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.setProperty('display','none','important'));
         }
     });
+
+    document.querySelectorAll('.modal-overlay').forEach(m => m.style.setProperty('display','none','important'));
 
     // Session recovery from localStorage
     if (state.token) {
@@ -852,5 +852,9 @@ window.viewCourse = viewCourse;
 window.showExplainability = showExplainability;
 window.navigateTo = navigateTo;
 window.resetAssessment = resetAssessment;
+
+
+
+
 
 

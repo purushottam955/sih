@@ -1374,3 +1374,405 @@ table tr:hover td {
         display: none;
     }
 }
+
+
+/* ===== AI ASSISTANT FULL SCREEN FIX ===== */
+#mainContent {
+    height: calc(100vh - 56px);
+    overflow: hidden;
+}
+
+#mainContent > .page {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#mainContent > .page .chat-container {
+    flex: 1 1 auto;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+}
+
+#mainContent > .page .chat-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* ===== AI ASSISTANT PREMIUM FULL SCREEN ===== */
+.page:has(.chat-container) {
+    min-height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+}
+
+.page:has(.chat-container) .page-header {
+    flex-shrink: 0;
+}
+
+.chat-container {
+    flex: 1 !important;
+    height: calc(100vh - 180px) !important;
+    max-height: none !important;
+    min-height: 600px !important;
+}
+
+.chat-messages {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 24px !important;
+}
+
+.chat-msg {
+    max-width: 90% !important;
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+    padding: 14px 18px !important;
+}
+
+.chat-msg.assistant {
+    max-width: 92% !important;
+}
+
+.ai-heading {
+    margin: 18px 0 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.ai-numbered {
+    margin: 9px 0;
+    padding-left: 4px;
+}
+
+.ai-bullet {
+    margin: 7px 0;
+    padding-left: 8px;
+}
+
+.ai-space {
+    height: 10px;
+}
+
+/* ===== AI ASSISTANT PREMIUM FULL SCREEN ===== */
+.page:has(.chat-container) {
+    min-height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+}
+
+.page:has(.chat-container) .page-header {
+    flex-shrink: 0;
+}
+
+.chat-container {
+    flex: 1 !important;
+    height: calc(100vh - 180px) !important;
+    max-height: none !important;
+    min-height: 600px !important;
+}
+
+.chat-messages {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 24px !important;
+}
+
+.chat-msg {
+    max-width: 90% !important;
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+    padding: 14px 18px !important;
+}
+
+.chat-msg.assistant {
+    max-width: 92% !important;
+}
+
+.ai-heading {
+    margin: 18px 0 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.ai-numbered {
+    margin: 9px 0;
+    padding-left: 4px;
+}
+
+.ai-bullet {
+    margin: 7px 0;
+    padding-left: 8px;
+}
+
+.ai-space {
+    height: 10px;
+}
+
+/* ===== PREMIUM ASSESSMENT RESULT ===== */
+#assessmentResultModal {
+    backdrop-filter: blur(6px);
+}
+
+#assessmentResultModal > div {
+    border-radius: 20px !important;
+    box-shadow: 0 25px 60px rgba(15,23,42,0.25) !important;
+    overflow: hidden;
+}
+
+#assessmentResultModal h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+#assessmentResultBody {
+    padding: 8px 0;
+}
+
+#assessmentResultBody p {
+    margin: 10px 0;
+}
+
+.assessment-result-score {
+    text-align: center;
+    padding: 20px;
+    margin: 10px 0 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg,#eff6ff,#f8fafc);
+    border: 1px solid #dbeafe;
+}
+
+.assessment-result-score .score-number {
+    font-size: 42px;
+    font-weight: 800;
+    color: #2563eb;
+    line-height: 1;
+}
+
+.assessment-result-score .score-label {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.assessment-success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 13px;
+}
+
+#assessmentResultModal button {
+    transition: all 0.2s ease;
+}
+
+#assessmentResultModal button:hover {
+    transform: translateY(-1px);
+}
+
+/* ===== PREMIUM ASSESSMENT RESULT ===== */
+#assessmentResultModal {
+    backdrop-filter: blur(6px);
+}
+
+#assessmentResultModal > div {
+    border-radius: 20px !important;
+    box-shadow: 0 25px 60px rgba(15,23,42,0.25) !important;
+    overflow: hidden;
+}
+
+#assessmentResultModal h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+#assessmentResultBody {
+    padding: 8px 0;
+}
+
+#assessmentResultBody p {
+    margin: 10px 0;
+}
+
+.assessment-result-score {
+    text-align: center;
+    padding: 20px;
+    margin: 10px 0 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg,#eff6ff,#f8fafc);
+    border: 1px solid #dbeafe;
+}
+
+.assessment-result-score .score-number {
+    font-size: 42px;
+    font-weight: 800;
+    color: #2563eb;
+    line-height: 1;
+}
+
+.assessment-result-score .score-label {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.assessment-success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 13px;
+}
+
+#assessmentResultModal button {
+    transition: all 0.2s ease;
+}
+
+#assessmentResultModal button:hover {
+    transform: translateY(-1px);
+}
+
+/* ===== FIX PAGE SCROLL ===== */
+html, body { min-height: 100%; height: auto !important; overflow-y: auto !important; }
+#app, main, .main-content { min-height: 100vh; height: auto !important; overflow: visible !important; }
+.page { height: auto !important; min-height: calc(100vh - 100px); overflow: visible !important; }
+.chat-container { overflow: hidden !important; }
+.chat-messages { overflow-y: auto !important; }
+
+/* ===== FULL HEIGHT DARK SIDEBAR ===== */
+body { min-height: 100vh !important; }
+#app { min-height: 100vh !important; }
+.sidebar { position: fixed !important; top: 0 !important; bottom: 0 !important; height: 100vh !important; min-height: 100vh !important; overflow-y: auto !important; }
+.main-content { min-height: 100vh !important; }
+
+/* ===== SIDEBAR OVERLAY FIX ===== */
+.sidebar { position: relative !important; top: auto !important; bottom: auto !important; height: auto !important; min-height: 100vh !important; overflow-y: visible !important; }
+
+/* ===== CENTER ASSESSMENT RESULT MODAL ===== */
+#assessmentResultModal { position: fixed !important; inset: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 24px !important; box-sizing: border-box !important; }
+#assessmentResultModal > div { width: min(520px, 100%) !important; max-width: 520px !important; margin: 0 auto !important; }
+.course-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.course-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #2563eb;
+}
+
+.course-card h4 {
+    font-size: 1.05rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.course-card .course-skill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 5px 9px;
+    border-radius: 8px;
+    width: fit-content;
+    margin-bottom: 0.75rem;
+}
+
+.course-card .course-reason {
+    line-height: 1.5;
+    color: #475569;
+}
+
+.course-card .course-priority .badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.course-card .course-actions {
+    margin-top: 1rem;
+}
+
+.course-card .course-actions .btn {
+    flex: 1;
+    min-width: 120px;
+}
+html, body {
+    overflow: hidden !important;
+}
+
+#app {
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+.main-content {
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+.page:has(.chat-container) {
+    height: calc(100vh - 40px) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+.page:has(.chat-container) .page-header {
+    flex-shrink: 0 !important;
+}
+
+.chat-container {
+    height: calc(100vh - 190px) !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.chat-messages {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+/* Fix scrolling for normal pages while keeping AI chat internal scroll */
+.page:not(:has(.chat-container)) {
+    height: calc(100vh - 40px) !important;
+    max-height: calc(100vh - 40px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-bottom: 40px !important;
+}
+
+.page:not(:has(.chat-container))::-webkit-scrollbar {
+    width: 8px;
+}
+
+.page:not(:has(.chat-container))::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}

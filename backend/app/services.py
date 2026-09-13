@@ -74,16 +74,16 @@ def generate_questions_from_text(text: str):
     """
     Generate multiple-choice questions from training material.
 
-    Returns:
-        [
-            {
-                "id": "q1",
-                "question": "...",
-                "options": ["...", "...", "...", "..."],
-                "correct": 0
-            }
-        ]
+    Each question is mapped to one of the platform competencies.
     """
+
+    competencies = [
+        "Statistical",
+        "Data Analysis",
+        "Data Visualization",
+        "Digital Governance",
+        "Leadership"
+    ]
 
     # Fallback if Gemini isn't configured
     if not model:
@@ -97,7 +97,8 @@ def generate_questions_from_text(text: str):
                     "Air",
                     "Fire"
                 ],
-                "correct": 0
+                "correct": 0,
+                "competency": "Data Analysis"
             },
             {
                 "id": "q2",
@@ -108,7 +109,20 @@ def generate_questions_from_text(text: str):
                     "Calculator only",
                     "Notepad only"
                 ],
-                "correct": 0
+                "correct": 0,
+                "competency": "Data Analysis"
+            },
+            {
+                "id": "q3",
+                "question": "Why is accurate statistical information important?",
+                "options": [
+                    "For evidence-based decision making",
+                    "Only for decoration",
+                    "To reduce computer storage",
+                    "It has no practical use"
+                ],
+                "correct": 0,
+                "competency": "Statistical"
             }
         ]
 
@@ -117,7 +131,14 @@ You are an assessment-generation assistant for the MoSPI / NSSTA
 Skill Intelligence Platform.
 
 Analyze the following training material and generate exactly 3
-multiple-choice questions to assess comprehension.
+multiple-choice questions to assess employee competency.
+
+The platform has these competency categories:
+
+{", ".join(competencies)}
+
+For EACH question, determine which ONE competency is most directly
+assessed by that question.
 
 Return ONLY valid JSON.
 
@@ -127,9 +148,19 @@ Each question must contain:
 - "question": the question text
 - "options": exactly 4 answer choices
 - "correct": integer index from 0 to 3
+- "competency": exactly ONE of:
+  "Statistical",
+  "Data Analysis",
+  "Data Visualization",
+  "Digital Governance",
+  "Leadership"
 
-Do not include markdown.
-Do not include explanations outside the JSON.
+Rules:
+- Questions must be based on the training material.
+- Do not invent unrelated content.
+- Do not include markdown.
+- Do not include explanations outside the JSON.
+- The "correct" value must be the zero-based index of the correct option.
 
 Training material:
 
@@ -154,111 +185,70 @@ Training material:
 
         valid_questions = []
 
-        for index, question in enumerate(questions[:3]):
+        for i, question in enumerate(questions[:3]):
+
             if not isinstance(question, dict):
                 continue
 
-            qid = str(question.get("id", f"q{index + 1}"))
-            question_text = str(question.get("question", "")).strip()
-            options = question.get("options", [])
-            correct = question.get("correct", 0)
+            competency = question.get("competency")
 
-            if not question_text:
-                continue
+            if competency not in competencies:
+                competency = "Data Analysis"
 
-            if not isinstance(options, list):
-                continue
+            valid_questions.append({
+                "id": question.get("id", f"q{i + 1}"),
+                "question": question.get("question", ""),
+                "options": question.get("options", []),
+                "correct": int(question.get("correct", 0)),
+                "competency": competency
+            })
 
-            if len(options) != 4:
-                continue
-
-            try:
-                correct = int(correct)
-            except Exception:
-                correct = 0
-
-            if correct < 0 or correct > 3:
-                correct = 0
-
-            valid_questions.append(
-                {
-                    "id": qid,
-                    "question": question_text,
-                    "options": [str(x) for x in options],
-                    "correct": correct
-                }
-            )
+        if not valid_questions:
+            raise ValueError("No valid assessment questions generated.")
 
         return valid_questions
 
     except Exception as e:
-        print(f"Gemini generation error: {e}")
+        print(f"Question generation error: {e}")
 
-        # Return fallback questions instead of crashing the API
         return [
             {
                 "id": "q1",
-                "question": "What is the main purpose of training material?",
+                "question": "What is data?",
                 "options": [
-                    "Learning and skill development",
-                    "Entertainment only",
-                    "Deleting data",
-                    "Formatting a computer"
+                    "Information",
+                    "Water",
+                    "Air",
+                    "Fire"
                 ],
-                "correct": 0
+                "correct": 0,
+                "competency": "Data Analysis"
             },
             {
                 "id": "q2",
-                "question": "Which activity helps improve competency?",
+                "question": "Which technology is commonly used for data analysis?",
                 "options": [
-                    "Practice and learning",
-                    "Ignoring training",
-                    "Deleting courses",
-                    "Avoiding assessment"
+                    "Python",
+                    "Paint",
+                    "Calculator only",
+                    "Notepad only"
                 ],
-                "correct": 0
+                "correct": 0,
+                "competency": "Data Analysis"
+            },
+            {
+                "id": "q3",
+                "question": "Why is accurate statistical information important?",
+                "options": [
+                    "For evidence-based decision making",
+                    "Only for decoration",
+                    "To reduce computer storage",
+                    "It has no practical use"
+                ],
+                "correct": 0,
+                "competency": "Statistical"
             }
         ]
-
-
-# ============================================================
-# LOCAL FALLBACK EMBEDDING
-# ============================================================
-
-def _local_embedding(text: str, dimensions: int = 768):
-    """
-    Lightweight deterministic local embedding fallback.
-
-    This is NOT intended to replace a production embedding model.
-    It simply prevents RAG from crashing when the Gemini embedding
-    endpoint is unavailable.
-    """
-
-    vector = [0.0] * dimensions
-
-    words = re.findall(r"\b[a-zA-Z0-9]+\b", text.lower())
-
-    if not words:
-        return vector
-
-    for word in words:
-        # Deterministic hash so the same word always maps
-        # to the same vector position.
-        index = hash(word) % dimensions
-        vector[index] += 1.0
-
-    # Normalize
-    magnitude = math.sqrt(sum(x * x for x in vector))
-
-    if magnitude == 0:
-        return vector
-
-    return [x / magnitude for x in vector]
-
-
-# ============================================================
-# EMBEDDINGS
-# ============================================================
 
 def get_embedding(text: str, task_type: str = "retrieval_query"):
     """
@@ -327,3 +317,4 @@ def cosine_similarity(v1, v2):
         return 0.0
 
     return dot / (mag1 * mag2)
+
