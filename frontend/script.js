@@ -651,9 +651,7 @@ async function renderAdmin(container) {
     const heatmap = await fetchAPI('/admin/heatmap');
 
     container.innerHTML = `
-        <div class="page">
-            <div class="page-header">
-                <h2><i class="fas fa-users-cog"></i> Organization Competency Heatmap</h2>
+        <div class="page admin-page"><div class="page-header"><h2><i class="fas fa-users-cog"></i> Organization Competency Heatmap</h2>
                 <p>Ministry-wide civil service competency matrix across active officials.</p>
             </div>
             <div class="card">
@@ -852,6 +850,7 @@ window.viewCourse = viewCourse;
 window.showExplainability = showExplainability;
 window.navigateTo = navigateTo;
 window.resetAssessment = resetAssessment;
+
 
 
 

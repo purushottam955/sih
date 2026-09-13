@@ -1776,3 +1776,83 @@ html, body {
     background: #cbd5e1;
     border-radius: 10px;
 }
+
+/* ===== ADMIN HEATMAP MOBILE FIX ===== */
+.admin-page {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-page .page-header {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-page .card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.admin-page .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-page .heatmap-grid {
+    min-width: 620px;
+    width: 100%;
+    grid-template-columns: 130px repeat(5, minmax(90px, 1fr));
+}
+
+@media (max-width: 600px) {
+    .admin-page {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 1rem !important;
+        box-sizing: border-box;
+    }
+
+    .admin-page .page-header {
+        margin-bottom: 1rem;
+    }
+
+    .admin-page .page-header h2 {
+        font-size: 1.35rem;
+        line-height: 1.3;
+    }
+
+    .admin-page .page-header p {
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .admin-page .card {
+        width: 100% !important;
+        padding: 0.75rem !important;
+        box-sizing: border-box;
+    }
+
+    .admin-page .heatmap-grid {
+        min-width: 620px !important;
+        grid-template-columns: 120px repeat(5, 100px) !important;
+        font-size: 0.72rem !important;
+        gap: 0.35rem !important;
+    }
+
+    .admin-page .heatmap-grid .header {
+        white-space: normal;
+        word-break: normal;
+        line-height: 1.25;
+        padding: 0.4rem 0.25rem;
+    }
+
+    .admin-page .heatmap-grid .cell {
+        padding: 0.45rem 0.25rem !important;
+    }
+}
