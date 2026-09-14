@@ -1,4 +1,4 @@
-import os
+﻿import os
 
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
 from .database import engine, Base, get_db
+from .seed import seed_db
 from .models import User, Course, Assessment, DocumentChunk
 from .schemas import Token, UserProfile, ChatRequest, AssessmentSubmit
 from .security import verify_password, create_access_token, settings
@@ -25,6 +26,7 @@ from .services import (
 # ============================================================
 
 Base.metadata.create_all(bind=engine)
+seed_db()
 
 
 # ============================================================
@@ -732,3 +734,4 @@ app.mount(
     ),
     name="frontend",
 )
+
