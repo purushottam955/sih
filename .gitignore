@@ -1,4 +1,29 @@
-backend/.env
-backend/.venv/
+﻿# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+
+# Secrets
+.env
+*.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime uploads
+backend/uploads/
+
+# Test files
+backend/test_*.txt
+
+# Frontend backups
+frontend/*_backup*.js
+frontend/*_backup*.css
+frontend/*_backup*.html
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

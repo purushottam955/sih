@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // 1. GLOBAL STATE & CONFIG
 // ============================================================
 const API_BASE = '/api';
@@ -96,7 +96,7 @@ async function handleLogin(e) {
         document.getElementById('userNameDisplay').textContent = state.user.name;
         document.getElementById('userRoleDisplay').textContent = state.user.designation;
         document.getElementById('userAvatar').textContent = state.user.initials;
-        document.getElementById('sidebarUser').textContent = `${state.user.initials} · ${state.user.name}`;
+        document.getElementById('sidebarUser').textContent = `${state.user.initials} Â· ${state.user.name}`;
 
         state.currentRole = state.user.is_admin ? 'admin' : 'learner';
         document.getElementById('roleLabel').textContent = state.currentRole === 'learner' ? '(Learner)' : '(Admin)';
@@ -132,9 +132,9 @@ function switchRole() {
 // 4. GAP UTILITY & FORMATTERS
 // ============================================================
 function getGapSeverity(gap) {
-    if (gap <= 0) return { label: 'No Gap', badge: 'badge-success', icon: '✅' };
-    if (gap === 1) return { label: 'Low Gap', badge: 'badge-warning', icon: '⚠️' };
-    return { label: 'High Gap', badge: 'badge-danger', icon: '❌' };
+    if (gap <= 0) return { label: 'No Gap', badge: 'badge-success', icon: 'âœ…' };
+    if (gap === 1) return { label: 'Low Gap', badge: 'badge-warning', icon: 'âš ï¸' };
+    return { label: 'High Gap', badge: 'badge-danger', icon: 'âŒ' };
 }
 
 // ============================================================
@@ -167,53 +167,305 @@ async function renderPage(page) {
 
 // ----- DASHBOARD -----
 async function renderDashboard(container) {
-    const gapData = await fetchAPI(`/gaps?target_role=${encodeURIComponent(state.selectedTargetRole)}`);
-    const recommended = await fetchAPI(`/courses/recommended?target_role=${encodeURIComponent(state.selectedTargetRole)}`);
+    const gapData = await fetchAPI(
+        `/gaps?target_role=${encodeURIComponent(state.selectedTargetRole)}`
+    );
 
-    let totalGaps = 0, highGaps = 0;
+    const recommended = await fetchAPI(
+        `/courses/recommended?target_role=${encodeURIComponent(state.selectedTargetRole)}`
+    );
+
+    let totalGaps = 0;
+    let highGaps = 0;
+
     COMPETENCIES.forEach(comp => {
         const g = gapData.gaps[comp]?.gap || 0;
+
         if (g > 0) {
             totalGaps++;
-            if (g >= 2) highGaps++;
+
+            if (g >= 2) {
+                highGaps++;
+            }
         }
     });
 
-    const progress = Math.round(COMPETENCIES.reduce((sum, comp) => { const item = gapData.gaps[comp]; return sum + (item ? Math.min(item.current / Math.max(item.required, 1), 1) * 100 : 0); }, 0) / COMPETENCIES.length);
+    const progress = Math.round(COMPETENCIES.reduce((sum, comp) => { const item = gapData.gaps[comp]; if (!item || !item.required) return sum; return sum + Math.min(item.current / item.required, 1) * 100; }, 0) / COMPETENCIES.length);
+
+    const readinessClass =
+        progress > 70
+            ? 'success'
+            : progress > 40
+                ? 'warning'
+                : 'danger';
 
     container.innerHTML = `
-        <div class="page">
-            <div class="page-header">
-                <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
-                <p>Welcome back, ${state.user.name} 👋 Your competency profile is being evaluated against your target role.</p>
-                <p><strong>Target Role:</strong> ${state.selectedTargetRole}</p>
+        <div class="page dashboard-page">
+
+            <!-- HERO -->
+            <section class="dashboard-hero">
+
+                <div class="dashboard-hero-content">
+
+                    <div class="hero-eyebrow">
+                        <i class="fas fa-sparkles"></i>
+                        YOUR COMPETENCY JOURNEY
+                    </div>
+
+                    <h1>
+                        Welcome back,
+                        <span>${state.user.name}</span> 👋
+                    </h1>
+
+                    <p class="hero-description">
+                        Continue building the skills you need for your
+                        target role and stay future-ready.
+                    </p>
+
+                    <div class="target-role-highlight">
+
+                        <div class="target-role-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+
+                        <div>
+                            <span class="target-role-label">
+                                TARGET ROLE
+                            </span>
+
+                            <strong>
+                                ${state.selectedTargetRole}
+                            </strong>
+
+                            <small>
+                                Your competency profile is evaluated
+                                against this role
+                            </small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="hero-decoration">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+
+            </section>
+
+
+            <!-- KPI CARDS -->
+            <div class="card-grid dashboard-stats">
+
+                <div class="stat-card dashboard-stat competencies-stat">
+
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+
+                        <span class="stat-status status-blue">
+                            ASSESSED
+                        </span>
+                    </div>
+
+                    <div class="stat-label">
+                        COMPETENCIES ASSESSED
+                    </div>
+
+                    <div class="stat-value">
+                        ${COMPETENCIES.length}
+                    </div>
+
+                    <div class="stat-sub">
+                        Across official MoSPI competency domains
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card dashboard-stat critical-stat">
+
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <i class="fas fa-triangle-exclamation"></i>
+                        </div>
+
+                        <span class="stat-status status-red">
+                            PRIORITY
+                        </span>
+                    </div>
+
+                    <div class="stat-label">
+                        CRITICAL GAPS
+                    </div>
+
+                    <div class="stat-value">
+                        ${highGaps}
+                    </div>
+
+                    <div class="stat-sub">
+                        ${
+                            highGaps > 0
+                                ? 'Requires focused training'
+                                : 'No critical gaps identified'
+                        }
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card dashboard-stat courses-stat">
+
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+
+                        <span class="stat-status status-green">
+                            PERSONALIZED
+                        </span>
+                    </div>
+
+                    <div class="stat-label">
+                        COURSES RECOMMENDED
+                    </div>
+
+                    <div class="stat-value">
+                        ${recommended.length}
+                    </div>
+
+                    <div class="stat-sub">
+                        Selected based on your competency gaps
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card dashboard-stat readiness-stat">
+
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+
+                        <span class="stat-status status-purple">
+                            TARGET ROLE
+                        </span>
+                    </div>
+
+                    <div class="stat-label">
+                        ROLE READINESS
+                    </div>
+
+                    <div class="stat-value">
+                        ${Math.round(progress)}%
+                    </div>
+
+                    <div class="readiness-progress">
+                        <div
+                            class="readiness-fill ${readinessClass}"
+                            style="width:${progress}%"
+                        ></div>
+                    </div>
+
+                    <div class="readiness-footer">
+                        <span>
+                            ${
+                                progress >= 70
+                                    ? 'Strong progress'
+                                    : progress >= 40
+                                        ? 'Keep building skills'
+                                        : 'Focus on critical gaps'
+                            }
+                        </span>
+
+                        <strong>
+                            ${Math.round(progress)}%
+                        </strong>
+                    </div>
+
+                </div>
+
             </div>
-            <div class="card-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Competencies Assessed</div>
-                    <div class="stat-value">${COMPETENCIES.length}</div>
-                    <div class="stat-sub">Across official MoSPI domains</div>
+
+
+            <!-- COMPETENCY PROFILE -->
+            <div class="card competency-profile-card">
+
+                <div class="competency-header">
+
+                    <div class="competency-title">
+
+                        <div class="section-icon">
+                            <i class="fas fa-chart-radar"></i>
+                        </div>
+
+                        <div>
+                            <h3>Live Competency Profile</h3>
+
+                            <p>
+                                Your current skills compared with
+                                the requirements of your target role
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="competency-legend">
+
+                        <span>
+                            <i class="legend-required"></i>
+                            Required Level
+                        </span>
+
+                        <span>
+                            <i class="legend-current"></i>
+                            Current Level
+                        </span>
+
+                    </div>
+
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Critical Gaps</div>
-                    <div class="stat-value" style="color:${highGaps > 0 ? '#ef4444' : '#22c55e'}">${highGaps}</div>
-                    <div class="stat-sub">${highGaps > 0 ? 'Requires immediate training' : 'Fully aligned'}</div>
+
+
+                <div class="competency-content">
+
+                    <div class="chart-wrapper">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+
+                    <div class="competency-insight">
+
+                        <div class="insight-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+
+                        <div>
+                            <h4>Focus on your priority gaps</h4>
+
+                            <p>
+                                Closing your critical competency gaps
+                                will directly improve readiness for
+                                <strong>${state.selectedTargetRole}</strong>.
+                            </p>
+
+                            <button
+                                class="btn btn-primary insight-btn"
+                                onclick="navigateTo('skillgaps')"
+                            >
+                                View Skill Gaps
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Courses Recommended</div>
-                    <div class="stat-value">${recommended.length}</div>
-                    <div class="stat-sub">Deterministic mapping</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Target Role Readiness</div>
-                    <div class="stat-value">${Math.round(progress)}%</div>
-                    <div class="progress-bar"><div class="fill ${progress > 70 ? 'success' : progress > 40 ? 'warning' : 'danger'}" style="width:${progress}%"></div></div>
-                </div>
+
             </div>
-            <div class="card">
-                <div class="card-title"><i class="fas fa-chart-radar"></i> Live Competency Profile</div>
-                <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
-            </div>
+
         </div>
     `;
 
@@ -275,36 +527,294 @@ async function renderProfile(container) {
     const user = state.user;
     const gapData = await fetchAPI(`/gaps?target_role=${encodeURIComponent(state.selectedTargetRole)}`);
 
+    let highGaps = 0;
+    let lowGaps = 0;
+    let noGaps = 0;
+    let totalReadiness = 0;
+
+    COMPETENCIES.forEach(c => {
+        const g = gapData.gaps[c] || { current: 0, required: 0, gap: 0 };
+
+        if (g.gap >= 2) highGaps++;
+        else if (g.gap === 1) lowGaps++;
+        else noGaps++;
+
+        if (g.required > 0) {
+            totalReadiness += Math.min(g.current / g.required, 1) * 100;
+        }
+    });
+
+    const readiness = Math.round(
+        totalReadiness / Math.max(COMPETENCIES.length, 1)
+    );
+
     container.innerHTML = `
-        <div class="page">
-            <div class="page-header"><h2><i class="fas fa-user-circle"></i> Official Profile</h2></div>
-            <div class="card" style="width:100%; max-width:none;">
-                <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
-                    <div style="width:80px;height:80px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#fff;">${user.initials}</div>
-                    <div>
-                        <h3 style="font-size:1.25rem;">${user.name}</h3>
-                        <p style="color:#64748b;">${user.designation} · ${user.department}</p>
-                        <p style="font-size:0.85rem;color:#64748b;"><i class="fas fa-id-badge"></i> ${user.employeeId} &nbsp;|&nbsp; <i class="fas fa-envelope"></i> ${user.email}</p>
-                        <p style="font-size:0.85rem;color:#64748b;"><i class="fas fa-graduation-cap"></i> ${user.qualification}</p>
-                        <p style="font-size:0.85rem;color:#2563eb;"><strong>Target Role:</strong> ${state.selectedTargetRole}</p>
+        <div class="page profile-page">
+
+            <div class="page-header profile-page-header">
+                <div>
+                    <h2>
+                        <i class="fas fa-user-circle"></i>
+                        Official Profile
+                    </h2>
+                    <p>Your professional details, competency levels, and target career information.</p>
+                </div>
+
+                <div class="profile-quote">
+                    <i class="fas fa-quote-left"></i>
+                    <span>Continuous learning builds stronger public institutions.</span>
+                    <small>iGOT Karmayogi</small>
+                </div>
+            </div>
+
+            <!-- PROFILE HERO -->
+            <div class="profile-hero card">
+
+                <div class="profile-identity">
+
+                    <div class="profile-avatar-wrap">
+                        <div class="profile-avatar">
+                            ${user.initials}
+                        </div>
+                        <span class="profile-online"></span>
+                    </div>
+
+                    <div class="profile-details">
+
+                        <div class="profile-name-row">
+                            <h3>${user.name}</h3>
+                            <span class="profile-role-badge">
+                                ${user.designation}
+                            </span>
+                        </div>
+
+                        <p class="profile-department">
+                            ${user.department}
+                        </p>
+
+                        <div class="profile-meta">
+                            <span>
+                                <i class="fas fa-id-badge"></i>
+                                ${user.employeeId}
+                            </span>
+
+                            <span>
+                                <i class="fas fa-envelope"></i>
+                                ${user.email}
+                            </span>
+
+                            <span>
+                                <i class="fas fa-graduation-cap"></i>
+                                ${user.qualification}
+                            </span>
+                        </div>
+
+                        <div class="profile-target">
+                            <i class="fas fa-bullseye"></i>
+                            <strong>Target Role:</strong>
+                            <span>${state.selectedTargetRole}</span>
+                        </div>
+
                     </div>
                 </div>
-                <hr style="margin:1rem 0;">
-                <h4 style="margin-bottom:0.5rem;">Competency Assessment Matrix</h4>
-                ${COMPETENCIES.map(c => {
-                    const g = gapData.gaps[c] || { current: 0, required: 0, gap: 0 };
-                    const sev = getGapSeverity(g.gap);
-                    return `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f1f5f9;">
-                        <span><strong>${c}</strong></span>
-                        <span>Current: Level ${g.current} &nbsp;|&nbsp; Required: Level ${g.required} &nbsp; <span class="badge ${sev.badge}">${sev.icon} ${sev.label}</span></span>
-                    </div>`;
-                }).join('')}
+
+                <div class="profile-hero-side">
+                    <div class="profile-motivation">
+                        <i class="fas fa-chart-column"></i>
+                        <p>Skilled people,<br>stronger data,<br>a brighter Bharat.</p>
+                        <span></span>
+                    </div>
+                </div>
+
             </div>
+
+            <!-- MAIN PROFILE GRID -->
+            <div class="profile-content-grid">
+
+                <!-- COMPETENCY MATRIX -->
+                <div class="card profile-competency-card">
+
+                    <div class="section-heading">
+                        <div>
+                            <h3>
+                                <i class="fas fa-chart-column"></i>
+                                Competency Assessment Matrix
+                            </h3>
+                            <p>
+                                Your current competency levels compared with the
+                                requirements for your target role.
+                            </p>
+                        </div>
+
+                        <div class="gap-legend">
+                            <span>
+                                <b class="legend-dot no-gap"></b>
+                                No Gap
+                            </span>
+                            <span>
+                                <b class="legend-dot low-gap"></b>
+                                Low Gap
+                            </span>
+                            <span>
+                                <b class="legend-dot high-gap"></b>
+                                High Gap
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="competency-table">
+
+                        <div class="competency-row competency-header">
+                            <span>COMPETENCY</span>
+                            <span>CURRENT</span>
+                            <span>REQUIRED</span>
+                            <span>PROGRESS</span>
+                            <span>GAP</span>
+                            <span>PRIORITY</span>
+                        </div>
+
+                        ${COMPETENCIES.map(c => {
+                            const g = gapData.gaps[c] || {
+                                current: 0,
+                                required: 0,
+                                gap: 0
+                            };
+
+                            const sev = getGapSeverity(g.gap);
+
+                            const percentage = g.required > 0
+                                ? Math.round(Math.min(g.current / g.required, 1) * 100)
+                                : 0;
+
+                            const progressClass =
+                                g.gap >= 2
+                                    ? 'progress-danger'
+                                    : g.gap === 1
+                                        ? 'progress-warning'
+                                        : 'progress-success';
+
+                            return `
+                                <div class="competency-row">
+
+                                    <span class="competency-name">
+                                        <i class="fas fa-chart-simple"></i>
+                                        ${c}
+                                    </span>
+
+                                    <strong class="current-level">
+                                        ${g.current}
+                                    </strong>
+
+                                    <strong class="required-level">
+                                        ${g.required}
+                                    </strong>
+
+                                    <span class="competency-progress">
+                                        <span class="progress-track">
+                                            <span
+                                                class="progress-fill ${progressClass}"
+                                                style="width:${percentage}%"
+                                            ></span>
+                                        </span>
+                                        <small>${percentage}%</small>
+                                    </span>
+
+                                    <strong class="gap-number ${g.gap >= 2 ? 'gap-high' : g.gap === 1 ? 'gap-low' : 'gap-none'}">
+                                        ${g.gap}
+                                    </strong>
+
+                                    <span class="badge ${sev.badge}">
+                                        ${sev.label}
+                                    </span>
+
+                                </div>
+                            `;
+                        }).join('')}
+
+                    </div>
+                </div>
+
+                <!-- RIGHT SIDEBAR -->
+                <div class="profile-side-column">
+
+                    <!-- SUMMARY -->
+                    <div class="card profile-summary-card">
+
+                        <div class="side-card-title">
+                            <i class="fas fa-file-lines"></i>
+                            <h3>Profile Summary</h3>
+                        </div>
+
+                        <div class="summary-grid">
+
+                            <div class="summary-item summary-blue">
+                                <i class="fas fa-layer-group"></i>
+                                <div>
+                                    <strong>${COMPETENCIES.length}</strong>
+                                    <span>Competencies</span>
+                                </div>
+                            </div>
+
+                            <div class="summary-item summary-red">
+                                <i class="fas fa-triangle-exclamation"></i>
+                                <div>
+                                    <strong>${highGaps}</strong>
+                                    <span>High Priority</span>
+                                </div>
+                            </div>
+
+                            <div class="summary-item summary-yellow">
+                                <i class="fas fa-exclamation"></i>
+                                <div>
+                                    <strong>${lowGaps}</strong>
+                                    <span>Low Priority</span>
+                                </div>
+                            </div>
+
+                            <div class="summary-item summary-green">
+                                <i class="fas fa-circle-notch"></i>
+                                <div>
+                                    <strong>${readiness}%</strong>
+                                    <span>Readiness</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- QUICK ACTIONS -->
+                    <div class="card profile-actions-card">
+
+                        <div class="side-card-title">
+                            <i class="fas fa-bolt"></i>
+                            <h3>Quick Actions</h3>
+                        </div>
+
+                        <button class="profile-action primary" onclick="navigateTo('learning')">
+                            <i class="fas fa-book-open"></i>
+                            View Learning Recommendations
+                        </button>
+
+                        <button class="profile-action" onclick="navigateTo('career')">
+                            <i class="fas fa-road"></i>
+                            Explore Career Pathway
+                        </button>
+
+                        <button class="profile-action" onclick="navigateTo('assessment')">
+                            <i class="fas fa-file-circle-check"></i>
+                            Generate New Assessment
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
     `;
-}
-
-// ----- SKILL GAPS -----
+}// ----- SKILL GAPS -----
 async function renderSkillGaps(container) {
     const gapData = await fetchAPI(`/gaps?target_role=${encodeURIComponent(state.selectedTargetRole)}`);
 
@@ -312,7 +822,7 @@ async function renderSkillGaps(container) {
         <div class="page">
             <div class="page-header">
                 <h2><i class="fas fa-exclamation-triangle"></i> Competency Skill Gaps</h2>
-                <p>Calculated by backend rules engine: <strong>Required Level − Current Level</strong></p>
+                <p>Calculated by backend rules engine: <strong>Required Level âˆ’ Current Level</strong></p>
             </div>
             <div class="card">
                 <div class="table-responsive">
@@ -381,48 +891,318 @@ async function renderLearning(container) {
 
 // ----- CAREER NAVIGATOR -----
 async function renderCareer(container) {
-    const gapData = await fetchAPI(`/gaps?target_role=${encodeURIComponent(state.selectedTargetRole)}`);
-    const recommended = await fetchAPI(`/courses/recommended?target_role=${encodeURIComponent(state.selectedTargetRole)}`);
+    const gapData = await fetchAPI(
+        `/gaps?target_role=${encodeURIComponent(state.selectedTargetRole)}`
+    );
 
-    const steps = recommended.map((c, i) => `Step ${i + 1}: Complete "${c.title}" to close ${c.skill} gap.`);
-    steps.push(`Step ${steps.length + 1}: Undergo reassessment via MoSPI Capacity Engine.`);
+    const recommended = await fetchAPI(
+        `/courses/recommended?target_role=${encodeURIComponent(state.selectedTargetRole)}`
+    );
 
-    container.innerHTML = `
-        <div class="page">
-            <div class="page-header">
-                <h2><i class="fas fa-road"></i> Career Pathway Navigator</h2>
-                <p>Select target civil service role to project prerequisites and career steps.</p>
-            </div>
-            <div class="card">
-                <label style="font-weight:600;display:block;margin-bottom:0.4rem;">Select Target Cadre Position</label>
-                <select id="targetRoleSelect" style="padding:0.5rem 1rem;border-radius:12px;border:1.5px solid #e2e8f0;font-size:0.95rem;width:100%;max-width:320px;">
-                    ${POSSIBLE_TARGETS.map(r => `<option value="${r}" ${r === state.selectedTargetRole ? 'selected' : ''}>${r}</option>`).join('')}
-                </select>
-            </div>
-            <div class="card">
-                <h4>Milestones for: <strong>${state.selectedTargetRole}</strong></h4>
-                <div style="margin:0.75rem 0;">
-                    <p><strong>Identified Gaps to Bridge:</strong></p>
-                    ${COMPETENCIES.map(c => {
-                        const g = gapData.gaps[c];
-                        if (!g || g.gap <= 0) return '';
-                        return `<div style="margin-top:0.25rem;">• ${c}: Gap of ${g.gap} level(s)</div>`;
-                    }).join('') || '<p style="color:#22c55e;">No competency gaps for this role.</p>'}
+    const gapItems = COMPETENCIES.map(c => {
+        const g = gapData.gaps[c] || {
+            current: 0,
+            required: 0,
+            gap: 0
+        };
+
+        if (g.gap <= 0) return '';
+
+        const severity = g.gap === 1 ? 'low' : 'high';
+        const label = g.gap === 1 ? 'Low Gap' : 'High Gap';
+        const icon = g.gap === 1
+            ? 'fa-triangle-exclamation'
+            : 'fa-circle-exclamation';
+
+        const competencyIcon =
+            c === 'Statistical'
+                ? 'fa-chart-column'
+                : c === 'Data Analysis'
+                    ? 'fa-database'
+                    : c === 'Data Visualization'
+                        ? 'fa-chart-line'
+                        : c === 'Digital Governance'
+                            ? 'fa-shield-halved'
+                            : 'fa-users';
+
+        return `
+            <div class="career-gap-item ${severity}">
+
+                <div class="career-gap-icon">
+                    <i class="fas ${competencyIcon}"></i>
                 </div>
-                <h4>Prescribed Sequential Roadmap</h4>
-                <ol style="padding-left:1.25rem;margin-top:0.5rem;line-height:1.8;">
-                    ${steps.map(s => `<li>${s}</li>`).join('')}
-                </ol>
+
+                <div class="career-gap-name">
+                    <strong>${c}</strong>
+                    <span>Gap of ${g.gap} level(s)</span>
+                </div>
+
+                <div class="career-gap-status ${severity}">
+                    <i class="fas ${icon}"></i>
+                    ${label}
+                </div>
+
             </div>
+        `;
+    }).join('');
+
+    const roadmapSteps = recommended.map((course, i) => `
+        <div class="career-roadmap-item">
+
+            <div class="career-step-number">
+                ${i + 1}
+            </div>
+
+            <div class="career-roadmap-content">
+
+                <div>
+                    <strong>
+                        Complete "${course.title}"
+                    </strong>
+
+                    <span>
+                        To close ${course.skill} gap.
+                    </span>
+                </div>
+
+                <div class="career-address-badge">
+                    Addresses Gap
+                </div>
+
+            </div>
+
+        </div>
+    `).join('');
+
+    const reassessmentStep = `
+        <div class="career-roadmap-item">
+
+            <div class="career-step-number">
+                ${recommended.length + 1}
+            </div>
+
+            <div class="career-roadmap-content">
+
+                <div>
+                    <strong>
+                        Undergo Competency Reassessment
+                    </strong>
+
+                    <span>
+                        Measure progress and update your competency profile.
+                    </span>
+                </div>
+
+                <div class="career-address-badge reassessment">
+                    Reassess
+                </div>
+
+            </div>
+
         </div>
     `;
 
-    document.getElementById('targetRoleSelect')?.addEventListener('change', function () {
-        state.selectedTargetRole = this.value;
-        navigateTo('career');
-    });
-}
+    container.innerHTML = `
+        <div class="page career-page">
 
+            <!-- PAGE HEADER -->
+            <div class="career-page-header">
+
+                <div>
+                    <div class="career-eyebrow">
+                        <i class="fas fa-route"></i>
+                        CAREER DEVELOPMENT
+                    </div>
+
+                    <h2>
+                        <i class="fas fa-road"></i>
+                        Career Pathway Navigator
+                    </h2>
+
+                    <p>
+                        Select your target civil service role to project
+                        prerequisites and career steps.
+                    </p>
+                </div>
+
+                <div class="career-growth-banner">
+
+                    <div class="career-growth-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+
+                    <div>
+                        <strong>Plan your growth</strong>
+                        <span>
+                            Identify skill gaps, follow a structured
+                            learning path, and move towards your target role.
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TARGET ROLE -->
+            <div class="career-target-card">
+
+                <div class="career-target-left">
+
+                    <label>
+                        Select Target Cadre Position
+                    </label>
+
+                    <select id="targetRoleSelect">
+                        ${POSSIBLE_TARGETS.map(r =>
+                            `<option value="${r}" ${r === state.selectedTargetRole ? 'selected' : ''}>${r}</option>`
+                        ).join('')}
+
+                    </select>
+
+                </div>
+
+                <div class="career-role-flow">
+
+                    <div class="career-role-box">
+                        <i class="fas fa-user-tie"></i>
+
+                        <div>
+                            <span>Current Role</span>
+                            <strong>Statistical Officer</strong>
+                        </div>
+                    </div>
+
+                    <i class="fas fa-arrow-right career-role-arrow"></i>
+
+                    <div class="career-role-box target">
+
+                        <i class="fas fa-bullseye"></i>
+
+                        <div>
+                            <span>Target Role</span>
+                            <strong>${state.selectedTargetRole}</strong>
+                        </div>
+
+                    </div>
+
+                    <div class="career-next-level">
+                        <i class="fas fa-chart-line"></i>
+
+                        <div>
+                            <span>Career Growth</span>
+                            <strong>Next Level</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- MAIN TWO COLUMN AREA -->
+            <div class="career-two-column">
+
+                <!-- IDENTIFIED GAPS -->
+                <div class="card career-panel">
+
+                    <div class="career-panel-header">
+
+                        <div class="career-panel-icon blue">
+                            <i class="fas fa-chart-column"></i>
+                        </div>
+
+                        <div>
+                            <h3>Identified Gaps to Bridge</h3>
+
+                            <p>
+                                Competencies requiring improvement for
+                                ${state.selectedTargetRole}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="career-gap-list">
+
+                        ${gapItems || `
+                            <div class="career-no-gaps">
+                                <i class="fas fa-circle-check"></i>
+                                No competency gaps identified for this role.
+                            </div>
+                        `}
+
+                    </div>
+
+                </div>
+
+
+                <!-- ROADMAP -->
+                <div class="card career-panel">
+
+                    <div class="career-panel-header">
+
+                        <div class="career-panel-icon purple">
+                            <i class="fas fa-file-lines"></i>
+                        </div>
+
+                        <div>
+                            <h3>Prescribed Sequential Roadmap</h3>
+
+                            <p>
+                                Recommended learning path to achieve your
+                                target role.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="career-roadmap">
+
+                        ${roadmapSteps}
+
+                        ${reassessmentStep}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CAREER TIP -->
+            <div class="career-tip">
+
+                <div class="career-tip-icon">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+
+                <div>
+                    <strong>Career Tip</strong>
+
+                    <span>
+                        Focus on high-gap areas first to accelerate
+                        your career readiness.
+                    </span>
+                </div>
+
+                <div class="career-tip-quote">
+                    "Continuous learning is the bridge between your
+                    current role and your ambition."
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    document
+        .getElementById('targetRoleSelect')
+        ?.addEventListener('change', function () {
+            state.selectedTargetRole = this.value;
+            navigateTo('career');
+        });
+}
 function formatAIResponse(text) {
     let html = String(text || '')
         .replace(/&/g, '&amp;')
@@ -432,7 +1212,7 @@ function formatAIResponse(text) {
         .replace(/^###\s+(.+)$/gm, '<h4 class="ai-heading">$1</h4>')
         .replace(/^##\s+(.+)$/gm, '<h3 class="ai-heading">$1</h3>')
         .replace(/^(\d+)\.\s+(.+)$/gm, '<div class="ai-numbered"><strong>$1.</strong> $2</div>')
-        .replace(/^[-�]\s+(.+)$/gm, '<div class="ai-bullet">� $1</div>')
+        .replace(/^[-•]\s+(.+)$/gm, '<div class="ai-bullet">• $1</div>')
         .replace(/\n{2,}/g, '<div class="ai-space"></div>')
         .replace(/\n/g, '<br>');
     return html;
@@ -644,7 +1424,7 @@ function resetAssessment() {
     renderAssessment(document.getElementById('mainContent'));
 }
 
-function showAssessmentResult(result){var pct=result.percentage??Math.round((result.score/Math.max(result.total,1))*100);var level=result.competency_level??"�";document.getElementById("assessmentResultBody").innerHTML="<p>Your performance report has been compiled successfully.</p><div class=\"assessment-result-score\"><div class=\"score-number\">"+result.score+"/"+result.total+"</div><div class=\"score-label\">"+pct+"% assessment performance</div></div><div style=\"padding:14px 16px;margin-bottom:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;\"><div style=\"font-size:13px;color:#64748b;margin-bottom:5px;\">Assessed Competency Level</div><div style=\"font-size:24px;font-weight:800;color:#2563eb;\">Level "+level+" / 7</div></div><div class=\"assessment-success\"><span>?</span><span>Assessment recorded and competency profile updated successfully.</span></div>";}
+function showAssessmentResult(result){var pct=result.percentage??Math.round((result.score/Math.max(result.total,1))*100);var level=result.competency_level??"—";document.getElementById("assessmentResultBody").innerHTML="<p>Your performance report has been compiled successfully.</p><div class=\"assessment-result-score\"><div class=\"score-number\">"+result.score+"/"+result.total+"</div><div class=\"score-label\">"+pct+"% assessment performance</div></div><div style=\"padding:14px 16px;margin-bottom:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;\"><div style=\"font-size:13px;color:#64748b;margin-bottom:5px;\">Assessed Competency Level</div><div style=\"font-size:24px;font-weight:800;color:#2563eb;\">Level "+level+" / 7</div></div><div class=\"assessment-success\"><span>?</span><span>Assessment recorded and competency profile updated successfully.</span></div>";}
 
 // ----- ADMIN DASHBOARD -----
 async function renderAdmin(container) {
@@ -674,7 +1454,7 @@ async function renderAdmin(container) {
                     </div>
                 </div>
                 <div class="legend">
-                    <span class="legend-item"><span class="swatch" style="background:#dcfce7;"></span> Advanced (≥4)</span>
+                    <span class="legend-item"><span class="swatch" style="background:#dcfce7;"></span> Advanced (â‰¥4)</span>
                     <span class="legend-item"><span class="swatch" style="background:#fef9c3;"></span> Proficient (3)</span>
                     <span class="legend-item"><span class="swatch" style="background:#fee2e2;"></span> Basic (2)</span>
                     <span class="legend-item"><span class="swatch" style="background:#fecaca;border:1px solid #ef4444;"></span> Deficient (&lt;2)</span>
@@ -835,7 +1615,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('userNameDisplay').textContent = state.user.name;
                 document.getElementById('userRoleDisplay').textContent = state.user.designation;
                 document.getElementById('userAvatar').textContent = state.user.initials;
-                document.getElementById('sidebarUser').textContent = `${state.user.initials} · ${state.user.name}`;
+                document.getElementById('sidebarUser').textContent = `${state.user.initials} Â· ${state.user.name}`;
                 state.currentRole = state.user.is_admin ? 'admin' : 'learner';
                 document.getElementById('roleLabel').textContent = state.currentRole === 'learner' ? '(Learner)' : '(Admin)';
                 buildSidebar();
@@ -850,6 +1630,9 @@ window.viewCourse = viewCourse;
 window.showExplainability = showExplainability;
 window.navigateTo = navigateTo;
 window.resetAssessment = resetAssessment;
+
+
+
 
 
 
