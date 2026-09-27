@@ -511,7 +511,7 @@ function initRadarChart(gaps) {
             scales: {
                 r: {
                     beginAtZero: true,
-                    max: 7,
+                    max: 5,
                     ticks: { stepSize: 1 }
                 }
             },
@@ -1424,7 +1424,7 @@ function resetAssessment() {
     renderAssessment(document.getElementById('mainContent'));
 }
 
-function showAssessmentResult(result){var pct=result.percentage??Math.round((result.score/Math.max(result.total,1))*100);var level=result.competency_level??"—";document.getElementById("assessmentResultBody").innerHTML="<p>Your performance report has been compiled successfully.</p><div class=\"assessment-result-score\"><div class=\"score-number\">"+result.score+"/"+result.total+"</div><div class=\"score-label\">"+pct+"% assessment performance</div></div><div style=\"padding:14px 16px;margin-bottom:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;\"><div style=\"font-size:13px;color:#64748b;margin-bottom:5px;\">Assessed Competency Level</div><div style=\"font-size:24px;font-weight:800;color:#2563eb;\">Level "+level+" / 7</div></div><div class=\"assessment-success\"><span>?</span><span>Assessment recorded and competency profile updated successfully.</span></div>";}
+function showAssessmentResult(result){var pct=result.percentage??Math.round((result.score/Math.max(result.total,1))*100);var level=result.competency_level??"—";document.getElementById("assessmentResultBody").innerHTML="<p>Your performance report has been compiled successfully.</p><div class=\"assessment-result-score\"><div class=\"score-number\">"+result.score+"/"+result.total+"</div><div class=\"score-label\">"+pct+"% assessment performance</div></div><div style=\"padding:14px 16px;margin-bottom:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;\"><div style=\"font-size:13px;color:#64748b;margin-bottom:5px;\">Assessed Competency Level</div><div style=\"font-size:24px;font-weight:800;color:#2563eb;\">Level "+level+" / 5</div></div><div class=\"assessment-success\"><span>?</span><span>Assessment recorded and competency profile updated successfully.</span></div>";}
 
 // ----- ADMIN DASHBOARD -----
 async function renderAdmin(container) {
@@ -1630,6 +1630,7 @@ window.viewCourse = viewCourse;
 window.showExplainability = showExplainability;
 window.navigateTo = navigateTo;
 window.resetAssessment = resetAssessment;
+
 
 
 

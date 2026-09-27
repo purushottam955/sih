@@ -479,18 +479,14 @@ def submit_assessment(
     total_questions = max(assessment.total, 1)
     percentage = (score / total_questions) * 100
 
-    # Convert assessment performance to competency level 1-7
-    if percentage >= 95:
-        new_level = 7
-    elif percentage >= 85:
-        new_level = 6
-    elif percentage >= 70:
+    # Convert assessment performance to competency level 1-5
+    if percentage >= 90:
         new_level = 5
-    elif percentage >= 55:
+    elif percentage >= 75:
         new_level = 4
-    elif percentage >= 40:
+    elif percentage >= 60:
         new_level = 3
-    elif percentage >= 25:
+    elif percentage >= 40:
         new_level = 2
     else:
         new_level = 1
@@ -734,4 +730,5 @@ app.mount(
     ),
     name="frontend",
 )
+
 
