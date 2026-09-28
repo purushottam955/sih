@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // 1. GLOBAL STATE & CONFIG
 // ============================================================
 const API_BASE = '/api';
@@ -96,7 +96,7 @@ async function handleLogin(e) {
         document.getElementById('userNameDisplay').textContent = state.user.name;
         document.getElementById('userRoleDisplay').textContent = state.user.designation;
         document.getElementById('userAvatar').textContent = state.user.initials;
-        document.getElementById('sidebarUser').textContent = `${state.user.initials} Â· ${state.user.name}`;
+        document.getElementById('sidebarUser').textContent = `${state.user.initials} • ${state.user.name}`;
 
         state.currentRole = state.user.is_admin ? 'admin' : 'learner';
         document.getElementById('roleLabel').textContent = state.currentRole === 'learner' ? '(Learner)' : '(Admin)';
@@ -132,8 +132,8 @@ function switchRole() {
 // 4. GAP UTILITY & FORMATTERS
 // ============================================================
 function getGapSeverity(gap) {
-    if (gap <= 0) return { label: 'No Gap', badge: 'badge-success', icon: 'âœ…' };
-    if (gap === 1) return { label: 'Low Gap', badge: 'badge-warning', icon: 'âš ï¸' };
+    if (gap <= 0) return { label: 'No Gap', badge: 'badge-success', icon: '✓' };
+    if (gap === 1) return { label: 'Low Gap', badge: 'badge-warning', icon: '⚠' };
     return { label: 'High Gap', badge: 'badge-danger', icon: 'âŒ' };
 }
 
@@ -822,7 +822,7 @@ async function renderSkillGaps(container) {
         <div class="page">
             <div class="page-header">
                 <h2><i class="fas fa-exclamation-triangle"></i> Competency Skill Gaps</h2>
-                <p>Calculated by backend rules engine: <strong>Required Level âˆ’ Current Level</strong></p>
+                <p>Calculated by backend rules engine: <strong>Required Level − Current Level</strong></p>
             </div>
             <div class="card">
                 <div class="table-responsive">
@@ -1298,14 +1298,23 @@ async function sendChatMessage() {
 // ----- ASSESSMENT GENERATOR (RAG DOCUMENT BASED) -----
 function renderAssessment(container) {
     const file = state.assessmentFile;
-    const questions = state.assessmentQuestions;
+    const questions = state.assessmentQuestions || [];
     const submitted = state.assessmentSubmitted;
+    const answeredCount = Object.keys(state.assessmentAnswers || {}).length;
+
+    const levelDescriptions = {
+        1: 'Novice / Foundational',
+        2: 'Basic / Developing',
+        3: 'Proficient / Intermediate',
+        4: 'Advanced',
+        5: 'Mastery / Expert'
+    };
 
     container.innerHTML = `
         <div class="page">
             <div class="page-header">
                 <h2><i class="fas fa-clipboard-list"></i> AI Assessment Engine</h2>
-                <p>Upload official training material (PDF/DOCX/TXT). The Gemini AI engine will parse the document, index vector embeddings, and construct tailored evaluation questions.</p>
+                <p>Upload official training material (PDF/DOCX/TXT). The Gemini AI engine will parse the document, index vector embeddings, and construct 10–20 comprehensive evaluation questions across competency domains.</p>
             </div>
             <div class="card">
                 <div class="upload-area" id="uploadArea">
@@ -1314,30 +1323,118 @@ function renderAssessment(container) {
                     <div class="file-name" id="fileNameDisplay">${file ? file.name : 'No file selected'}</div>
                     <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" style="display:none;" />
                 </div>
-                <button id="generateAssessBtn" class="btn btn-primary" style="margin-top:0.75rem;" ${file ? '' : 'disabled'}>
-                    <i class="fas fa-magic"></i> Generate Grounded Assessment
-                </button>
-            </div>
-            ${submitted ? `
-                <div class="card">
-                    <h4>Assessment Score</h4>
-                    <p style="font-size:1.1rem;margin:0.5rem 0;">You scored <strong>${state.assessmentScore}</strong> out of <strong>${questions.length}</strong>.</p>
-                    <button class="btn btn-secondary" onclick="resetAssessment()">Take Another Assessment</button>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;flex-wrap:wrap;gap:8px;">
+                    <button id="generateAssessBtn" class="btn btn-primary" ${file ? '' : 'disabled'}>
+                        <i class="fas fa-magic"></i> Generate 10–20 Evaluation Questions
+                    </button>
+                    ${file ? `<span style="font-size:0.85rem;color:#64748b;"><i class="fas fa-file-alt"></i> ${file.name} (${Math.round(file.size / 1024)} KB)</span>` : ''}
                 </div>
-            ` : (questions.length > 0 ? `
-                <div class="card">
-                    <h4>Generated Evaluation: ${file ? file.name : 'Document'}</h4>
-                    ${questions.map((q, idx) => `
-                        <div class="question-block" data-qid="${q.id}">
-                            <p><strong>Q${idx + 1}:</strong> ${q.question}</p>
-                            <div class="options">
-                                ${q.options.map((opt, oi) => `
-                                    <label><input type="radio" name="q_${q.id}" value="${oi}" ${state.assessmentAnswers[q.id] === oi ? 'checked' : ''} /> ${opt}</label>
+            </div>
+
+            ${submitted ? `
+                <div class="card" style="border-left: 4px solid #2563eb;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:1rem;">
+                        <div>
+                            <h3 style="margin:0;color:#0f172a;"><i class="fas fa-award" style="color:#2563eb;"></i> Assessment Results</h3>
+                            <p style="margin:0.25rem 0 0;color:#64748b;">Evaluated on the official MoSPI Competency Scale (Level 1 to Level 5)</p>
+                        </div>
+                        <span class="badge badge-success" style="font-size:0.9rem;padding:6px 14px;">
+                            <i class="fas fa-check-circle"></i> Competencies Recorded
+                        </span>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+                        <div style="background:#f8fafc;padding:1.25rem;border-radius:14px;border:1px solid #e2e8f0;text-align:center;">
+                            <div style="font-size:0.8rem;color:#64748b;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Questions Score</div>
+                            <div style="font-size:2rem;font-weight:800;color:#0f172a;">${state.assessmentScore} / ${state.assessmentTotal || questions.length}</div>
+                            <div style="font-size:0.85rem;color:#2563eb;font-weight:600;margin-top:2px;">${state.assessmentPercentage ?? Math.round((state.assessmentScore / Math.max(questions.length, 1)) * 100)}% Accuracy</div>
+                        </div>
+
+                        <div style="background:#eff6ff;padding:1.25rem;border-radius:14px;border:1.5px solid #bfdbfe;text-align:center;">
+                            <div style="font-size:0.8rem;color:#1e40af;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Assessed Competency Level</div>
+                            <div style="font-size:2rem;font-weight:800;color:#2563eb;">Level ${state.assessmentLevel || 1} / 5</div>
+                            <div style="font-size:0.85rem;color:#1e3a8a;font-weight:600;margin-top:2px;">${levelDescriptions[state.assessmentLevel || 1] || 'Proficient'} (Highest: Level 5)</div>
+                        </div>
+                    </div>
+
+                    ${state.assessmentBreakdown && Object.keys(state.assessmentBreakdown).length > 0 ? `
+                        <div style="margin-bottom:1.5rem;">
+                            <h4 style="font-size:0.95rem;color:#334155;margin-bottom:0.75rem;"><i class="fas fa-chart-bar"></i> Domain Competency Breakdown (Scale 1–5):</h4>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:0.75rem;">
+                                ${Object.entries(state.assessmentBreakdown).map(([comp, b]) => `
+                                    <div style="padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+                                        <div>
+                                            <strong>${comp}</strong>
+                                            <div style="font-size:0.75rem;color:#64748b;">${b.score}/${b.total} questions (${b.percentage}%)</div>
+                                        </div>
+                                        <span class="badge badge-info" style="font-size:0.85rem;font-weight:700;">Level ${b.level} / 5</span>
+                                    </div>
                                 `).join('')}
                             </div>
                         </div>
-                    `).join('')}
-                    <button class="btn btn-primary" id="submitAssessBtn" style="margin-top:1rem;">Submit Evaluation</button>
+                    ` : ''}
+
+                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem;">
+                        <button class="btn btn-primary" onclick="navigateTo('dashboard')">
+                            <i class="fas fa-chart-radar"></i> View Updated Competency Profile
+                        </button>
+                        <button class="btn btn-outline" id="reviewModalBtn">
+                            <i class="fas fa-file-invoice"></i> View Detailed Assessment Modal
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetAssessment()">
+                            <i class="fas fa-redo"></i> Take Another Assessment
+                        </button>
+                    </div>
+                </div>
+            ` : (questions.length > 0 ? `
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid #e2e8f0;">
+                        <div>
+                            <h3 style="margin:0;"><i class="fas fa-tasks"></i> Competency Evaluation: ${file ? file.name : 'Document Module'}</h3>
+                            <p style="margin:0.25rem 0 0;color:#64748b;">Answer all questions to establish your competency level (Scale 1 to 5)</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="badge badge-info" style="font-size:0.85rem;padding:6px 12px;">
+                                ${questions.length} Questions
+                            </span>
+                            <div id="answeredCounter" style="font-size:0.8rem;color:#475569;margin-top:4px;">
+                                Answered: ${answeredCount} / ${questions.length}
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="assessmentForm" onsubmit="return false;">
+                        ${questions.map((q, idx) => `
+                            <div class="question-block" data-qid="${q.id}" style="margin-bottom:1.5rem;padding:1.25rem;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;">
+                                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:0.75rem;">
+                                    <div style="font-size:1rem;font-weight:600;color:#0f172a;">
+                                        <span style="display:inline-block;width:32px;height:32px;line-height:32px;text-align:center;border-radius:50%;background:#dbeafe;color:#1e40af;font-size:0.85rem;font-weight:700;margin-right:8px;">${idx + 1}</span>
+                                        ${q.question}
+                                    </div>
+                                    <span class="badge badge-secondary" style="font-size:0.75rem;white-space:nowrap;">
+                                        <i class="fas fa-tag"></i> ${q.competency || 'Data Analysis'}
+                                    </span>
+                                </div>
+                                <div class="options" style="display:grid;gap:0.5rem;margin-left:40px;">
+                                    ${q.options.map((opt, oi) => `
+                                        <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer;transition:0.15s;">
+                                            <input type="radio" name="q_${q.id}" value="${oi}" ${state.assessmentAnswers[q.id] === oi ? 'checked' : ''} style="cursor:pointer;" />
+                                            <span>${opt}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;padding-top:1rem;border-top:1px solid #e2e8f0;">
+                            <div style="font-size:0.9rem;color:#64748b;">
+                                Complete questions to update your competency profile across MoSPI domains.
+                            </div>
+                            <button class="btn btn-primary" id="submitAssessBtn" style="padding:0.75rem 2rem;font-size:1rem;">
+                                <i class="fas fa-paper-plane"></i> Submit Evaluation (${questions.length} Questions)
+                            </button>
+                        </div>
+                    </form>
                 </div>
             ` : '')}
         </div>
@@ -1363,7 +1460,7 @@ function renderAssessment(container) {
         if (!state.assessmentFile) return;
 
         this.disabled = true;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parsing Document & Generating...';
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing Document & Generating 10–20 Questions...';
 
         const formData = new FormData();
         formData.append('file', state.assessmentFile);
@@ -1378,6 +1475,11 @@ function renderAssessment(container) {
             state.assessmentQuestions = data.questions;
             state.assessmentAnswers = {};
             state.assessmentSubmitted = false;
+            state.assessmentScore = null;
+            state.assessmentTotal = null;
+            state.assessmentLevel = null;
+            state.assessmentPercentage = null;
+            state.assessmentBreakdown = null;
             renderAssessment(document.getElementById('mainContent'));
         } catch (err) {
             alert('Failed to generate assessment: ' + err.message);
@@ -1389,10 +1491,32 @@ function renderAssessment(container) {
         el.addEventListener('change', function () {
             const qid = this.name.replace('q_', '');
             state.assessmentAnswers[qid] = parseInt(this.value, 10);
+            const count = Object.keys(state.assessmentAnswers).length;
+            const counter = document.getElementById('answeredCounter');
+            if (counter) {
+                counter.textContent = `Answered: ${count} / ${questions.length}`;
+            }
         });
     });
 
+    document.getElementById('reviewModalBtn')?.addEventListener('click', () => {
+        if (state.lastAssessmentResult) {
+            showAssessmentResult(state.lastAssessmentResult);
+            document.getElementById('assessmentResultModal').style.setProperty('display', 'flex', 'important');
+        }
+    });
+
     document.getElementById('submitAssessBtn')?.addEventListener('click', async function () {
+        const answered = Object.keys(state.assessmentAnswers).length;
+        if (answered < questions.length) {
+            if (!confirm(`You have answered ${answered} of ${questions.length} questions. Do you want to submit anyway?`)) {
+                return;
+            }
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Evaluating Competency...';
+
         try {
             const result = await fetchAPI('/assessments/submit', {
                 method: 'POST',
@@ -1402,14 +1526,24 @@ function renderAssessment(container) {
                 })
             });
 
+            state.lastAssessmentResult = result;
             state.assessmentScore = result.score;
+            state.assessmentTotal = result.total;
+            state.assessmentLevel = Math.min(5, Math.max(1, result.competency_level || 1));
+            state.assessmentPercentage = result.percentage;
+            state.assessmentBreakdown = result.competency_breakdown || null;
             state.assessmentSubmitted = true;
-            renderAssessment(document.getElementById('mainContent'));
 
+            if (result.updated_competencies && state.user) {
+                state.user.competencies = result.updated_competencies;
+            }
+
+            renderAssessment(document.getElementById('mainContent'));
             showAssessmentResult(result);
-            document.getElementById('assessmentResultModal').style.setProperty('display','flex','important');
+            document.getElementById('assessmentResultModal').style.setProperty('display', 'flex', 'important');
         } catch (err) {
             alert('Failed to submit assessment: ' + err.message);
+            renderAssessment(document.getElementById('mainContent'));
         }
     });
 }
@@ -1420,11 +1554,69 @@ function resetAssessment() {
     state.assessmentAnswers = {};
     state.assessmentSubmitted = false;
     state.assessmentScore = null;
+    state.assessmentTotal = null;
+    state.assessmentLevel = null;
+    state.assessmentPercentage = null;
+    state.assessmentBreakdown = null;
     state.currentAssessmentId = null;
     renderAssessment(document.getElementById('mainContent'));
 }
 
-function showAssessmentResult(result){var pct=result.percentage??Math.round((result.score/Math.max(result.total,1))*100);var level=result.competency_level??"—";document.getElementById("assessmentResultBody").innerHTML="<p>Your performance report has been compiled successfully.</p><div class=\"assessment-result-score\"><div class=\"score-number\">"+result.score+"/"+result.total+"</div><div class=\"score-label\">"+pct+"% assessment performance</div></div><div style=\"padding:14px 16px;margin-bottom:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;\"><div style=\"font-size:13px;color:#64748b;margin-bottom:5px;\">Assessed Competency Level</div><div style=\"font-size:24px;font-weight:800;color:#2563eb;\">Level "+level+" / 5</div></div><div class=\"assessment-success\"><span>?</span><span>Assessment recorded and competency profile updated successfully.</span></div>";}
+function showAssessmentResult(result) {
+    const pct = result.percentage ?? Math.round((result.score / Math.max(result.total, 1)) * 100);
+    const level = Math.min(5, Math.max(1, result.competency_level ?? 1));
+    const levelLabels = {
+        1: 'Novice / Foundational',
+        2: 'Basic / Developing',
+        3: 'Proficient / Intermediate',
+        4: 'Advanced',
+        5: 'Mastery / Expert'
+    };
+    const levelDesc = levelLabels[level] || 'Proficient';
+
+    let breakdownHtml = '';
+    if (result.competency_breakdown && Object.keys(result.competency_breakdown).length > 0) {
+        breakdownHtml = `
+            <div style="margin:16px 0;text-align:left;">
+                <h5 style="margin-bottom:8px;font-size:13px;color:#334155;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">
+                    Competency Breakdown (Scale 1–5):
+                </h5>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${Object.entries(result.competency_breakdown).map(([comp, b]) => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;">
+                            <span><strong>${comp}</strong> (${b.score}/${b.total} correct · ${b.percentage}%)</span>
+                            <span class="badge badge-info" style="font-weight:700;">Level ${b.level} / 5</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    document.getElementById("assessmentResultBody").innerHTML = `
+        <p style="margin-bottom:1rem;color:#475569;">Your performance report has been compiled successfully across ${result.total} evaluation questions.</p>
+        <div class="assessment-result-score" style="margin-bottom:14px;">
+            <div class="score-number">${result.score} / ${result.total}</div>
+            <div class="score-label">${pct}% Overall Accuracy</div>
+        </div>
+        <div style="padding:16px;margin-bottom:14px;border-radius:14px;background:#eff6ff;border:1.5px solid #bfdbfe;text-align:center;">
+            <div style="font-size:12px;color:#1e40af;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">
+                Assessed Competency Level
+            </div>
+            <div style="font-size:30px;font-weight:800;color:#2563eb;">
+                Level ${level} / 5
+            </div>
+            <div style="font-size:13px;color:#1e3a8a;margin-top:2px;font-weight:600;">
+                ${levelDesc} (Maximum: Level 5)
+            </div>
+        </div>
+        ${breakdownHtml}
+        <div class="assessment-success" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;font-size:13px;margin-top:12px;">
+            <i class="fas fa-check-circle" style="font-size:18px;"></i>
+            <span>Assessment recorded and your official competency profile has been updated!</span>
+        </div>
+    `;
+}
 
 // ----- ADMIN DASHBOARD -----
 async function renderAdmin(container) {
@@ -1454,7 +1646,7 @@ async function renderAdmin(container) {
                     </div>
                 </div>
                 <div class="legend">
-                    <span class="legend-item"><span class="swatch" style="background:#dcfce7;"></span> Advanced (â‰¥4)</span>
+                    <span class="legend-item"><span class="swatch" style="background:#dcfce7;"></span> Advanced (≥4)</span>
                     <span class="legend-item"><span class="swatch" style="background:#fef9c3;"></span> Proficient (3)</span>
                     <span class="legend-item"><span class="swatch" style="background:#fee2e2;"></span> Basic (2)</span>
                     <span class="legend-item"><span class="swatch" style="background:#fecaca;border:1px solid #ef4444;"></span> Deficient (&lt;2)</span>
@@ -1615,7 +1807,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('userNameDisplay').textContent = state.user.name;
                 document.getElementById('userRoleDisplay').textContent = state.user.designation;
                 document.getElementById('userAvatar').textContent = state.user.initials;
-                document.getElementById('sidebarUser').textContent = `${state.user.initials} Â· ${state.user.name}`;
+                document.getElementById('sidebarUser').textContent = `${state.user.initials} • ${state.user.name}`;
                 state.currentRole = state.user.is_admin ? 'admin' : 'learner';
                 document.getElementById('roleLabel').textContent = state.currentRole === 'learner' ? '(Learner)' : '(Admin)';
                 buildSidebar();

@@ -1,4 +1,4 @@
-﻿import os
+import os
 
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -420,6 +420,7 @@ async def upload_assessment(
                 "id": question["id"],
                 "question": question["question"],
                 "options": question["options"],
+                "competency": question.get("competency", "Data Analysis"),
             }
         )
 
@@ -430,7 +431,7 @@ async def upload_assessment(
 
 
 # ============================================================
-# SUBMIT ASSESSMENT
+# SUBMIT ASSESSMENT (SCALE 1 TO 5)
 # ============================================================
 
 @app.post("/api/assessments/submit")
@@ -439,6 +440,8 @@ def submit_assessment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    from sqlalchemy.orm.attributes import flag_modified
+
     assessment = (
         db.query(Assessment)
         .filter(
@@ -455,78 +458,84 @@ def submit_assessment(
         )
 
     score = 0
+    comp_stats = {}
 
     for question in assessment.questions:
-
-        user_answer = data.answers.get(
-            question["id"]
-        )
-
+        user_answer = data.answers.get(question["id"])
         correct_answer = question["correct"]
+
+        comp = (
+            question.get("competency")
+            or question.get("skill")
+            or question.get("category")
+            or "Data Analysis"
+        )
+        if comp not in comp_stats:
+            comp_stats[comp] = {"correct": 0, "total": 0}
+        comp_stats[comp]["total"] += 1
 
         if user_answer == correct_answer:
             score += 1
+            comp_stats[comp]["correct"] += 1
 
     assessment.score = score
-    assessment.total = len(
-        assessment.questions
-    )
+    assessment.total = len(assessment.questions)
 
     # --------------------------------------------------------
-    # UPDATE USER COMPETENCY FROM ASSESSMENT PERFORMANCE
+    # UPDATE USER COMPETENCY FROM ASSESSMENT PERFORMANCE (SCALE: 1-5)
+    # Highest Level is 5
     # --------------------------------------------------------
 
     total_questions = max(assessment.total, 1)
     percentage = (score / total_questions) * 100
 
-    # Convert assessment performance to competency level 1-5
-    if percentage >= 90:
-        new_level = 5
-    elif percentage >= 75:
-        new_level = 4
-    elif percentage >= 60:
-        new_level = 3
-    elif percentage >= 40:
-        new_level = 2
-    else:
-        new_level = 1
+    def calculate_level(pct: float) -> int:
+        if pct >= 85:
+            return 5
+        elif pct >= 70:
+            return 4
+        elif pct >= 50:
+            return 3
+        elif pct >= 30:
+            return 2
+        else:
+            return 1
 
-    competencies = current_user.competencies or {}
+    overall_level = min(5, max(1, calculate_level(percentage)))
 
-    detected_competencies = []
+    competencies = dict(current_user.competencies or {})
 
-    for question in assessment.questions:
-        competency = (
-            question.get("competency")
-            or question.get("skill")
-            or question.get("category")
-        )
+    competency_breakdown = {}
+    for comp, stats in comp_stats.items():
+        comp_pct = (stats["correct"] / max(stats["total"], 1)) * 100
+        comp_level = min(5, max(1, calculate_level(comp_pct)))
+        competency_breakdown[comp] = {
+            "score": stats["correct"],
+            "total": stats["total"],
+            "percentage": round(comp_pct, 1),
+            "level": comp_level,
+        }
+        # Update official's competency level (capped between 1 and 5)
+        old_level = competencies.get(comp, 1)
+        competencies[comp] = min(5, max(old_level, comp_level))
 
-        if competency and competency in competencies:
-            detected_competencies.append(competency)
-
-    # Fallback: if questions do not specify a competency,
-    # use the first competency in the employee profile.
-    if not detected_competencies and competencies:
-        detected_competencies = [next(iter(competencies))]
-
-    for competency in set(detected_competencies):
-        old_level = competencies.get(competency, 0)
-        competencies[competency] = max(
-            old_level,
-            new_level
-        )
+    # Ensure profile competency values are strictly bounded [1, 5]
+    for k in competencies:
+        competencies[k] = min(5, max(1, int(competencies[k])))
 
     current_user.competencies = competencies
-
+    flag_modified(current_user, "competencies")
     db.commit()
+    db.refresh(current_user)
 
     return {
         "score": score,
         "total": assessment.total,
         "percentage": round(percentage, 1),
-        "competency_level": new_level,
-        "updated_competencies": competencies,
+        "competency_level": overall_level,
+        "scale_max": 5,
+        "competency_breakdown": competency_breakdown,
+        "updated_competencies": current_user.competencies,
     }
 
 # ============================================================
