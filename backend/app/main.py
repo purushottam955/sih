@@ -34,7 +34,7 @@ seed_db()
 # ============================================================
 
 app = FastAPI(
-    title="Skill Intelligence API",
+    title="Capacity Connect API",
     version="1.0.0",
 )
 
@@ -663,8 +663,8 @@ def ai_chat(
             return {"response": local_fallback()}
 
         prompt = f"""
-You are the AI Competency Assistant for the
-MoSPI / NSSTA Skill Intelligence Platform.
+You are the AI Competency Assistant for Capacity Connect,
+the MoSPI / NSSTA capacity-building ecosystem.
 
 The user is an employee using the platform.
 

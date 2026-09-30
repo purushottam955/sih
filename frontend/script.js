@@ -218,8 +218,7 @@ async function renderDashboard(container) {
                     </h1>
 
                     <p class="hero-description">
-                        Continue building the skills you need for your
-                        target role and stay future-ready.
+                        A competency-driven capacity-building ecosystem connecting trainees, trainers and administrators through learning, assessment, competency mapping and trainer matching.
                     </p>
 
                     <div class="target-role-highlight">
@@ -253,6 +252,14 @@ async function renderDashboard(container) {
 
             </section>
 
+            <section class="capacity-connect-summary" aria-label="Capacity Connect approach">
+                <p class="capacity-connect-usp">
+                    We don't just provide courses; we identify the competency requirement, find the learner's gap, recommend the right learning, match suitable trainers, assess the outcome and update the competency profile.
+                </p>
+                <p class="capacity-connect-pillars">
+                    Competency-first · Two-sided intelligence · Closed loop · Explainable.
+                </p>
+            </section>
 
             <!-- KPI CARDS -->
             <div class="card-grid dashboard-stats">

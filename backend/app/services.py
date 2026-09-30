@@ -248,8 +248,8 @@ def generate_questions_from_text(text: str):
         return get_fallback_questions()
 
     prompt = f"""
-You are an expert assessment-generation assistant for the MoSPI / NSSTA
-Skill Intelligence Platform (National Statistical Systems Training Academy).
+You are an expert assessment-generation assistant for Capacity Connect,
+the MoSPI / NSSTA capacity-building ecosystem (National Statistical Systems Training Academy).
 
 Analyze the following training material and generate between 10 to 15
 high-quality multiple-choice questions to comprehensively assess employee competency.
